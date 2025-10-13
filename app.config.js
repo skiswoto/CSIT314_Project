@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 export default {
   name: 'csit314',
   slug: 'csit314',
@@ -38,6 +40,7 @@ export default {
           backgroundColor: '#000000',
         },
       },
+      "expo-secure-store",
     ],
   ],
   experiments: {
@@ -48,5 +51,7 @@ export default {
     eas: {
       projectId: '4feb4c81-94c0-4eb6-82aa-d317bd8d6d5e',
     },
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
   },
 };
