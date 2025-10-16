@@ -29,8 +29,8 @@ const CreateListingContainer = styled.TouchableOpacity`
     border-color: #D1D1D1;
     position: absolute;
     align-self: flex-end;
-    top: 560px;
-    right: 10px;
+    top: 580px;
+    right: 2px;
     padding: 10px;
     shadow-color: #000000;
     shadow-offset: 0px 0px;

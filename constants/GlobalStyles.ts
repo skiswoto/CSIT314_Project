@@ -6,7 +6,7 @@ export const SafeAreaViewContainer = styled.View`
 
 export const ScrollContainer = styled.ScrollView`
     margin-horizontal: 40px;
-    margin-top: 90px;
+    padding-top: 90px;
 `
 
 export const H1 = styled.Text`
