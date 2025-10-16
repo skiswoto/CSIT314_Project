@@ -1,19 +1,11 @@
-// import React from 'react';
+import { Text, View } from 'react-native'
 
-// const LoginForm = ({onSubmit, onToggleMode}) => {
-//     const handleSubmit =(e) => {
-//         e.preventDefault();
-//         onSubmit('login');
-//     };
+const LoginForm = () => {
+    return (
+        <View>
+        <Text>loginForm</Text>
+        </View>
+    )
+}
 
-//     return (
-//         <div className="space-y-4">
-//             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-//             <input type="email" 
-//                     placeholder="Enter your email"
-//                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-transparent outline-none"/>
-//         </div>
-      
-//         
-//     )
-// }
+export default LoginForm

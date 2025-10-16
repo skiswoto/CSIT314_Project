@@ -1,8 +1,8 @@
-import CreateCsrRepPage from "../(user-auth)/CreateCsrRepPage"; // Correct import based on new file/component name
-import CreatePinPage from "../(user-auth)/CreatePinPage"; // Same for CreatePinPage
-
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import CreateCsrRepPage from "../(user-auth)/CreateCsrRepPage";
+import CreatePinPage from "../(user-auth)/CreatePinPage";
+
 
 const Profile = () => {
   const [screen, setScreen] = useState<"main" | "csr" | "pin">("main");

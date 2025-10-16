@@ -23,7 +23,7 @@ const Home = () => {
 
 export default Home
 
-const CreateListingContainer = styled.TouchableOpacity`
+const CreateListingContainer = styled.Pressable`
     border-radius: 50px;
     border-width: 1px;
     border-color: #D1D1D1;

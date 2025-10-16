@@ -3,8 +3,8 @@ import { X } from 'lucide-react-native'
 import { StatusBar } from 'react-native'
 import { styled } from 'styled-components/native'
 
-type CreateListingFormTemplateProps = { children?: React.ReactNode }
 
+type CreateListingFormTemplateProps = { children?: React.ReactNode }
 
 const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps) => {
     return (
@@ -41,14 +41,13 @@ const BottomSection = styled.View`
     flex-direction: row;
     justify-content: flex-end;
     align-items: center;
-    
 `
 const ScreenContainer = styled.View`
     flex: 1;
-    margin-top: 80px;
-    margin-bottom: 50px;
-    margin-horizontal: 26px;
-    background-color: #EDEDED;
+    padding-top: 80px;
+    padding-bottom: 50px;
+    padding-horizontal: 26px;
+    background-color: #E3E3E3;
 `
 const Content = styled.ScrollView`
     padding-vertical: 40px;
