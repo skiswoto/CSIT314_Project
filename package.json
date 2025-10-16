@@ -33,6 +33,7 @@
     "expo-web-browser": "~15.0.8",
     "jest": "~29.7.0",
     "lucide-react-native": "^0.545.0",
+    "npm-install-global": "^1.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.65.0",
