@@ -1,20 +1,39 @@
+import { useRouter } from 'expo-router'
+import { SquarePen } from 'lucide-react-native'
 import { StatusBar } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { H1, ScrollContainer } from '../../constants/GlobalStyles'
-
+import { styled } from 'styled-components/native'
+import { H1, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles'
 
 const Home = () => {
+    const router = useRouter()
     return (
         <>
             <StatusBar />
-            <SafeAreaView>
+            <SafeAreaViewContainer>
                 <ScrollContainer>
                     <H1>home</H1>
+                    <CreateListingContainer>
+                        <SquarePen size = {26} onPress={()=> router.navigate('(create-request)/(steps)/step1' as any)}/>
+                    </CreateListingContainer>
                 </ScrollContainer>
-            </SafeAreaView>
+            </SafeAreaViewContainer>
         </>
-
     )
 }
 
 export default Home
+
+const CreateListingContainer = styled.TouchableOpacity`
+    border-radius: 50px;
+    border-width: 1px;
+    border-color: #D1D1D1;
+    position: absolute;
+    align-self: flex-end;
+    top: 560px;
+    right: 10px;
+    padding: 10px;
+    shadow-color: #000000;
+    shadow-offset: 0px 0px;
+    shadow-opacity: 0.4;
+    shadow-radius: 4px;
+`

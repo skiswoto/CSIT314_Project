@@ -1,9 +1,12 @@
 import { styled } from 'styled-components/native';
 
+export const SafeAreaViewContainer = styled.View`
+    flex: 1;
+`
 
-export const ScrollContainer = styled.View`
-    padding-horizontal: 40px;
-    margin-top: 40px;
+export const ScrollContainer = styled.ScrollView`
+    margin-horizontal: 40px;
+    margin-top: 90px;
 `
 
 export const H1 = styled.Text`
