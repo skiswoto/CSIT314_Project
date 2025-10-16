@@ -1,11 +1,29 @@
 import CreateCsrRepPage from "../(user-auth)/CreateCsrRepPage"; // Correct import based on new file/component name
 import CreatePinPage from "../(user-auth)/CreatePinPage"; // Same for CreatePinPage
+import { Link, useRouter } from 'expo-router'
+import { StatusBar, Text } from 'react-native'
+import { SafeAreaView, } from 'react-native-safe-area-context'
+SafeAreaView
 
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const Profile = () => {
   const [screen, setScreen] = useState<"main" | "csr" | "pin">("main");
+    const router = useRouter()
+    return (
+        <>
+            <StatusBar barStyle="dark-content" />
+            <SafeAreaView>
+                <Text>profile</Text>
+                <Link href="/(modals)/loginForm" asChild>
+                    <Text style={{color: 'blue'}}>Go to Login</Text>
+                </Link>
+            </SafeAreaView>
+            
+        </>
+    )
+}
 
   if (screen === "csr") return <CreateCsrRepPage setScreen={setScreen} />;
   if (screen === "pin") return <CreatePinPage setScreen={setScreen} />;
