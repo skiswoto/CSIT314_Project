@@ -47,7 +47,7 @@ const ScreenContainer = styled.View`
     padding-top: 80px;
     padding-bottom: 50px;
     padding-horizontal: 26px;
-    background-color: #E3E3E3;
+    background-color: #FCFCFC;
 `
 const Content = styled.ScrollView`
     padding-vertical: 40px;
