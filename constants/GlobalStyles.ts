@@ -5,7 +5,7 @@ export const SafeAreaViewContainer = styled.View`
 `
 
 export const ScrollContainer = styled.ScrollView`
-    margin-horizontal: 40px;
+    margin-horizontal: 20px;
     padding-top: 90px;
 `
 
