@@ -10,7 +10,8 @@ export const StepSubTitle = styled.Text`
     font-weight: 400;
     font-size: 16px;
     color: #615F5F;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+    max-width: 95%;
 `
 export const SectionTitle = styled.Text`
     font-weight: 600;
@@ -29,10 +30,10 @@ export const Card = styled.Pressable`
     justify-content: space-between;
     margin-bottom: 20px;
 `
-export const CardTitle = styled.Text`
-    font-weight: 500;
-    font-size: 18px;
-    color: #000000;
-    margin-bottom: 4px;
-    right: 4px;
+export const CardTitle = styled.Text<{ $hasValue?: boolean }>`
+	font-weight: 500;
+	font-size: 18px;
+	color: ${({ $hasValue }) => ($hasValue ? '#000000' : '#878787')};
+	margin-bottom: 4px;
+	right: 4px;
 `

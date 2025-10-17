@@ -13,7 +13,7 @@ const Home = () => {
                 <ScrollContainer>
                     <H1>home</H1>
                     <CreateListingContainer>
-                        <SquarePen size = {26} onPress={()=> router.navigate('(create-request)/(steps)/step1' as any)}/>
+                        <SquarePen size = {26} onPress={()=> router.navigate('(create-request)/(steps)/step3' as any)}/>
                     </CreateListingContainer>
                 </ScrollContainer>
             </SafeAreaViewContainer>

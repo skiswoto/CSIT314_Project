@@ -2,8 +2,8 @@ import { Card, CardTitle, SectionTitle, StepSubTitle, StepTitle } from "@/consta
 import { Picker } from '@react-native-picker/picker';
 import { FolderOpenDot } from 'lucide-react-native';
 import { useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
-import styled from "styled-components/native";
+import { StyleSheet, TextInput } from "react-native";
+import { styled } from "styled-components/native";
 import CreateRequestFormTemplate from "../createRequestFormTemplate";
 
 const Step1 = () => {
@@ -17,7 +17,7 @@ const Step1 = () => {
         <CreateRequestFormTemplate>
             <StepTitle>What do you need help with?</StepTitle>
             <StepSubTitle>Tell us briefly what kind of help you need and select a category to continue.</StepSubTitle>
-            <View>
+            <>
                 <SectionTitle>Description</SectionTitle>
                 <TextInput 
                     multiline
@@ -50,7 +50,7 @@ const Step1 = () => {
                         </Picker>
                     </>
                 }
-            </View>
+            </>
         </CreateRequestFormTemplate>
     )
 }
