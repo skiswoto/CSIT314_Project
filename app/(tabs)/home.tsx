@@ -31,7 +31,9 @@ const Home = () => {
                             <SlidersHorizontal />
                         </Filter>
                     </Bar>
-                    <ListingCard>
+                    <ListingCard
+                        onPress={() => router.navigate('/(specific-listing)/sampleListing')}
+                    >
                         <ImageBackground 
                             style={styles.image}
                             resizeMode="cover"
@@ -39,7 +41,7 @@ const Home = () => {
                         >
                             <Overlay>
                                 <ListingTextColumn>
-                                    <ListingTitle>Bobby, 60</ListingTitle>
+                                    <ListingTitle>Bobby, 60+</ListingTitle>
                                 </ListingTextColumn>
                                 <ListingIconColumn>
                                     <IconContainer>
@@ -60,7 +62,7 @@ const Home = () => {
                         >
                             <Overlay>
                                 <ListingTextColumn>
-                                    <ListingTitle>Bobby, 60</ListingTitle>
+                                    <ListingTitle>Bobby, 50+</ListingTitle>
                                 </ListingTextColumn>
                                 <ListingIconColumn>
                                     <IconContainer>
