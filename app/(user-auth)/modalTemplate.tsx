@@ -22,11 +22,6 @@ const Modal = styled.View`
     background-color: #FAFAFA;
     flex: 1;
 `
-const TopBar = styled.View`
-    flex-direction: row;
-    justify-content: flex-start;
-    margin-bottom: 40px;
-`
 const ModalContent = styled.ScrollView`
     flex-direction: column;
 `

@@ -34,6 +34,6 @@ const LoginButtonText = styled.Text`
     color: #ffffff;
     font-weight: 600;
     font-size: 18px;
-    padding-vertical: 14px;
+    padding-vertical: 16px;
     align-self: center;
 `

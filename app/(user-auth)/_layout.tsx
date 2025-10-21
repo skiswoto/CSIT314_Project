@@ -10,7 +10,6 @@ const AuthLayout = () => {
                 options={{
                     title: 'Sign Up',
                     headerShown: false,
-                    contentStyle: { borderRadius: 20 }
                 }}
             />
             <Stack.Screen

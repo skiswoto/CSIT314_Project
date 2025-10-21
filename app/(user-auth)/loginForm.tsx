@@ -1,100 +1,76 @@
-import { Stack, useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { X } from 'lucide-react-native';
+import React from 'react';
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { styled } from 'styled-components/native';
+import ModalTemplate from './modalTemplate';
+import { TopBar } from './signUp';
 
 const LoginForm: React.FC = () => {
     const router = useRouter();
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
 
     const handleLogin = () => {
-        console.log('Login with:', username, password);
+        console.log('Login attempt');
     };
 
     return (
-        <>
-        <Stack.Screen
-            options={{
-            headerShown: true,
-            headerTitle: '',
-            headerLeft: () => (
-                <TouchableOpacity
-                onPress={() => router.back()}
-                style={{ marginLeft: 4}}
-                >
-                <ChevronLeft size={28} color="#1F2937" fill="#F0F4FF" />
-                </TouchableOpacity>
-            ),
-            headerStyle: {
-                backgroundColor: '#F0F4FF',
-            },
-            headerShadowVisible: false,
-            }}
-        />
-        <View style={styles.container}>
-            <View style={styles.formContainer}>
+        <ModalTemplate>
+            <TopBar onPress={() => router.back()}>
+                <X size={30} />
+            </TopBar>
+            <Image
+                style={styles.image}
+                resizeMode='contain'
+                source={require('../../assets/samples/signUp.png')} 
+            />
             <Text style={styles.title}>Welcome Back!</Text>
             <Text style={styles.subtitle}>Login to your account</Text>
-            
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Username</Text>
                 <TextInput
                 style={styles.input}
                 placeholder="Enter your username"
-                value={username}
-                onChangeText={setUsername}
                 autoCapitalize="none"
                 />
             </View>
-
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Password</Text>
                 <TextInput
                 style={styles.input}
                 placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
                 />
             </View>
-
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
                 <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
-
             <View style={styles.bottomLinks}>
                 <TouchableOpacity style={styles.linkButton}>
                 <Text style={styles.linkText}>Forgot Password?</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/(user-auth)/signUp')}>
-                <Text style={styles.linkText}>Sign Up</Text>
+                    <SignUpLinkRow>
+                        <Text>Don&apos;t have an account?</Text>
+                        <Text style={styles.linkText}>Sign Up</Text>
+                    </SignUpLinkRow>
                 </TouchableOpacity>
             </View>
-            </View>
-        </View>
-        </>
+        </ModalTemplate>
     );
 };
 
+const SignUpLinkRow = styled.View`
+    flex-direction: row;
+`
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F0F4FF',
-        justifyContent: 'center',
-        padding: 16,
-    },
-    formContainer: {
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+    image: {
+        width: '60%',
+        height: 130,
+        alignSelf: 'center',
+        marginBottom: 14
     },
     title: {
         fontSize: 28,
@@ -121,32 +97,28 @@ const styles = StyleSheet.create({
     input: {
         borderWidth: 1,
         borderColor: '#D1D5DB',
-        borderRadius: 8,
+        borderRadius: 10,
         padding: 12,
         fontSize: 16,
         backgroundColor: '#F9FAFB',
     },
     loginButton: {
-        backgroundColor: '#000',
-        borderRadius: 8,
+        backgroundColor: '#2B61A6',
+        borderRadius: 10,
         padding: 16,
         alignItems: 'center',
         marginTop: 8,
-        shadowColor: '#353535ff',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
     },
     loginButtonText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '600',
     },
     bottomLinks: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 16,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 20,
         paddingHorizontal: 4,
     },
     linkButton: {
@@ -155,7 +127,9 @@ const styles = StyleSheet.create({
     linkText: {
         color: '#000',
         fontSize: 14,
+        fontWeight: 500,
         textDecorationLine: 'underline',
+        marginLeft: 4
     },
 });
 

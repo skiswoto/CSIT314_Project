@@ -17,7 +17,7 @@ const SignUp: React.FC = () => {
 
     return (
         <ModalTemplate>
-            <TopBar>
+            <TopBar onPress={() => router.back()}>
                 <X size={30} />
             </TopBar>
             <Image
@@ -41,7 +41,7 @@ const SignUp: React.FC = () => {
             </TouchableOpacity>
             <View style={styles.bottomLinks}>
                 <Text style={styles.accountText}>Already have an account?</Text>
-                <TouchableOpacity onPress={() => router.back()}>
+                <TouchableOpacity onPress={() => router.replace('/(user-auth)/loginForm')}>
                     <Text style={styles.linkText}>Login</Text>
                 </TouchableOpacity>
             </View>
@@ -49,10 +49,11 @@ const SignUp: React.FC = () => {
     )
 };
 
-const TopBar = styled.View`
+export const TopBar = styled.Pressable`
     flex-direction: row;
     justify-content: flex-start;
     margin-bottom: 40px;
+    width: 10%;
 `
 
 const styles = StyleSheet.create({
