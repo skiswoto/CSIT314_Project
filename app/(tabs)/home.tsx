@@ -80,7 +80,7 @@ const Home = () => {
                     <SquarePen 
                         size = {26} 
                         color={'#ffffff'}
-                        onPress={()=> router.navigate('(create-request)/(steps)/step3' as any)}/>
+                        onPress={()=> router.navigate('(create-request)/(steps)/step1' as any)}/>
                 </CreateListingContainer>
             </SafeAreaViewContainer>
         </>
