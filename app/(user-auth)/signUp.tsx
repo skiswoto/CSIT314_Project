@@ -8,11 +8,11 @@ const SignUp: React.FC = () => {
     const router = useRouter();
 
     const handleCSRRepSignUp = () => {
-        console.log('Sign Up as a CSR Rep');
+        router.navigate('/(user-auth)/CreateCsrRepPage')
     };
 
     const handlePINSignUp = () => {
-        console.log('Sign Up as a PIN');
+        router.navigate('/(user-auth)/CreatePinPage')
     };
 
     return (
