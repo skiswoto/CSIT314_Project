@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-
+import { FileUser, User, UserRoundSearch } from 'lucide-react-native'
 
 const TabLayout = (): React.ReactElement => {
     return (
@@ -9,6 +9,7 @@ const TabLayout = (): React.ReactElement => {
                 options={{
                     title:'Home',
                     headerShown: false, 
+                    tabBarIcon: () => <UserRoundSearch />
                 }}
             />
             <Tabs.Screen
@@ -16,6 +17,7 @@ const TabLayout = (): React.ReactElement => {
                 options={{
                     title:'MyListings',
                     headerShown: false, 
+                    tabBarIcon: () => <FileUser />
                 }}
             />
             <Tabs.Screen 
@@ -23,6 +25,7 @@ const TabLayout = (): React.ReactElement => {
                 options={{
                     title:'Profile',
                     headerShown: false, 
+                    tabBarIcon: () => <User />
                 }}
             />
         </Tabs>
