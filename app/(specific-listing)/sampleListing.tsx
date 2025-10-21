@@ -101,7 +101,7 @@ const ChatButton = styled.Pressable`
     overflow: hidden;
     padding-horizontal: 6px;
     padding-vertical: 14px;
-    width: 30%;
+    width: 26%;
 `
 const Category = styled.Pressable`
     background-color: #F5F5F5;
