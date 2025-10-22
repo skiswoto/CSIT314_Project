@@ -14,7 +14,7 @@ const Step2 = () => {
     const [showDatePickerModal, setShowDatePickerModal]  = useState<boolean>(false)
     const [showStartTimePicker, setShowStartTimePicker]  = useState<boolean>(false)
     const [showDurationModal, setShowDurationModal]  = useState<boolean>(false)
-
+    
     const CURRENT_DATE = new Date();
     const MINIMUM_DATE = new Date(CURRENT_DATE)
     MINIMUM_DATE.setDate(MINIMUM_DATE.getDate() + 1)

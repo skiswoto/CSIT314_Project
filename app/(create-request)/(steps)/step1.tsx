@@ -1,4 +1,5 @@
 import { Card, CardTitle, SectionTitle, StepSubTitle, StepTitle } from "@/constants/createRequestFormStyles";
+import { useCreateListingStore } from "@/global/createListingStore";
 import { Picker } from '@react-native-picker/picker';
 import { FolderOpenDot } from 'lucide-react-native';
 import { useState } from "react";
@@ -8,8 +9,8 @@ import CreateRequestFormTemplate from "../createRequestFormTemplate";
 
 
 const Step1 = () => {
-    const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
     const [showCategorySelection, setShowCategorySelection] = useState<boolean>(false)
+    const { description, category, setDescription, setCategory } = useCreateListingStore()
 
     const handleSelectedCategory = () => [
         setShowCategorySelection(false)
@@ -27,9 +28,11 @@ const Step1 = () => {
                     placeholder="Describe what you need help with"
                     placeholderTextColor="#878787"
                     style={styles.textArea}
+                    value={description}
+                    onChangeText={(text) => setDescription(text)}
                 />
                 <Card onPress={() => setShowCategorySelection(true)}>
-                    <CardTitle>Category</CardTitle>
+                    <CardTitle>{!category ? 'Category' : category}</CardTitle>
                     <FolderOpenDot size={28} color='#737373' />
                 </Card>
                 {showCategorySelection && 
@@ -38,9 +41,9 @@ const Step1 = () => {
                             <PickerButtonText>Done</PickerButtonText>
                         </PickerButton>
                         <Picker
-                            selectedValue={selectedCategory}
-                            onValueChange={(itemValue) => 
-                                setSelectedCategory(itemValue)
+                            selectedValue={category}
+                            onValueChange={(category) => 
+                                setCategory(category)
                             }
                             itemStyle={{ color: 'black'}}
                         >
