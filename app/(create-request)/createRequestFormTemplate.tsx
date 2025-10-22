@@ -11,7 +11,7 @@ type CreateListingFormTemplateProps = {
 }
 
 const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps) => {
-    const { currentStep, nextStep, previousStep, resetSteps } = useCreateListingStore()
+    const { currentStep, nextStep, previousStep, resetSteps, cancelProgress } = useCreateListingStore()
     const router = useRouter()
     const stepsArray = (['/(create-request)/(steps)/step1', '/(create-request)/(steps)/step2', '/(create-request)/(steps)/step3'] as const)
 
@@ -32,12 +32,17 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         router.back()
     }
 
+    const handleCancelCreateListing = () => {
+        cancelProgress()
+        router.replace('/(tabs)/home')
+    }
+
     return (
         <>
             <StatusBar />
             <SafeAreaViewContainer>
                 <ScreenContainer> 
-                    <TopSection onPress={() => router.replace('/(tabs)/home')}>
+                    <TopSection onPress={handleCancelCreateListing}>
                         <X size={30} /> 
                     </TopSection>
                     <Content>
