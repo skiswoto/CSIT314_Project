@@ -1,7 +1,5 @@
-import { useCreateListingStore } from '@/global/createListingStore'
 import { useRouter } from 'expo-router'
 import { Heart, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native'
-import { useEffect } from 'react'
 import { ImageBackground, StatusBar, StyleSheet, View } from 'react-native'
 import { styled } from 'styled-components/native'
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles'
@@ -9,12 +7,6 @@ import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalSt
 
 const Home = () => {
     const router = useRouter()
-    const resetSteps = useCreateListingStore(s => s.resetSteps)
-    
-    useEffect(() => {
-        resetSteps()
-    }, [resetSteps])
-    
     return (
         <>
             <StatusBar />

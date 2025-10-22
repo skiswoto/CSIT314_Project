@@ -19,7 +19,6 @@ type State = {
 type Action = {
     nextStep: () => void
     previousStep: () => void
-    resetSteps: () => void
     setStep: (index: number) => void
     setDescription: (text: string) => void
     setCategory: (category: Category) => void
@@ -46,7 +45,6 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     postCode: '',
     nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
     previousStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
-    resetSteps: () => set(() => ({ currentStep: 0 })),
     setStep: (index: number) => set(() => ({ currentStep: Math.max(index, 0) })),
     setDescription: (text) => set(() => ({ description: text })),
     setCategory: (category) => set(() => ({ category })),
@@ -60,7 +58,14 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     cancelProgress: () => set((state) => ({
         currentStep: 0,
         description: '',
-        category: undefined
+        category: undefined,
+        date: undefined,
+        time: undefined,
+        duration: undefined,
+        streetAddress: '',
+        unitLevel: '',
+        buildingName: '',
+        postCode: '',
     }))
 }))
 
