@@ -6,6 +6,7 @@ import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalSt
 
 
 const Home = () => {
+    // Removed Code that is causing Pipeline failure
     const router = useRouter()
     return (
         <>

@@ -29,7 +29,6 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
     const handleNextStep = async () => {
         const lastIndex = stepsArray.length - 1
         if (currentStep >= lastIndex) {
-            // Store to Supabase for Persistence
             try {
                 const { error } = await supabase.rpc('insert_listing', {
                     description: description,
