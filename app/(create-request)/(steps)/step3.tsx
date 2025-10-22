@@ -1,10 +1,12 @@
 import { StepSubTitle, StepTitle } from "@/constants/createRequestFormStyles";
+import { useCreateListingStore } from "@/global/createListingStore";
 import { StyleSheet } from "react-native";
 import { styled } from "styled-components/native";
 import CreateRequestFormTemplate from "../createRequestFormTemplate";
 
 
 const Step3 = () => {
+    const { streetAddress, unitLevel, buildingName, postCode, setStreetAddress, setUnitLevel, setBuildingName, setPostCode } = useCreateListingStore()
     return (
         <CreateRequestFormTemplate>
             <StepTitle>Where should we send help?</StepTitle>
@@ -14,21 +16,29 @@ const Step3 = () => {
                     placeholder="Street Address"
                     placeholderTextColor="#A8A8A8"
                     style={styles.cardText}
+                    value={streetAddress}
+                    onChangeText={(text) => setStreetAddress(text)}
                 />
                 <Card 
                     placeholder="Unit, level (if applicable)"
                     placeholderTextColor="#A8A8A8"
                     style={styles.cardText} 
+                    value={unitLevel}
+                    onChangeText={(text) => setUnitLevel(text)}
                 />
                 <Card3 
                     placeholder="Building name (if applicable)"
                     placeholderTextColor="#A8A8A8"
                     style={styles.cardText}
+                    value={buildingName}
+                    onChangeText={(text) => setBuildingName(text)}
                 />
                 <BottomCard 
                     placeholder="Postcode"
                     placeholderTextColor="#A8A8A8"
                     style={styles.cardText}
+                    value={postCode}
+                    onChangeText={(text) => setPostCode(text)}
                 />
             </>
         </CreateRequestFormTemplate>

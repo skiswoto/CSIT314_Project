@@ -10,6 +10,10 @@ type State = {
     date?: Date
     time?: Date
     duration?: Date
+    streetAddress: string
+    unitLevel: string
+    buildingName: string
+    postCode: string
 }
 
 type Action = {
@@ -22,6 +26,10 @@ type Action = {
     setDate: (date: Date) => void
     setTime: (time: Date) => void
     setDuration: (duration: Date) => void
+    setStreetAddress: (text: string) => void
+    setUnitLevel: (text: string) => void
+    setBuildingName: (text: string) => void
+    setPostCode: (text: string) => void
     cancelProgress: () => void
 }
 
@@ -32,6 +40,10 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     date: undefined,
     time: undefined,
     duration: undefined,
+    streetAddress: '',
+    unitLevel: '',
+    buildingName: '',
+    postCode: '',
     nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
     previousStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
     resetSteps: () => set(() => ({ currentStep: 0 })),
@@ -41,6 +53,10 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     setDate: (date: Date) => set(() => ({ date: date})),
     setTime: (time: Date) => set(() => ({ time: time})),
     setDuration: (duration: Date) => set(() => ({ duration: duration})),
+    setStreetAddress: (text: string) => set(() => ({ streetAddress: text})),
+    setUnitLevel: (text: string) => set(() => ({ unitLevel: text})),
+    setBuildingName: (text: string) => set(() => ({ buildingName: text})),
+    setPostCode: (text: string) => set(() => ({ postCode: text})),
     cancelProgress: () => set((state) => ({
         currentStep: 0,
         description: '',
