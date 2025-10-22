@@ -6,9 +6,11 @@ import { StyleSheet, TextInput } from "react-native";
 import { styled } from "styled-components/native";
 import CreateRequestFormTemplate from "../createRequestFormTemplate";
 
+
 const Step1 = () => {
     const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
     const [showCategorySelection, setShowCategorySelection] = useState<boolean>(false)
+
     const handleSelectedCategory = () => [
         setShowCategorySelection(false)
     ]
