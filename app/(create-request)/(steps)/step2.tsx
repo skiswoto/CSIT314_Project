@@ -1,5 +1,4 @@
 import { Card, CardTitle, StepSubTitle, StepTitle } from "@/constants/createRequestFormStyles";
-import { useCreateListingStore } from "@/global/createListingStore";
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarFold, Clock2, Clock5, Hourglass } from 'lucide-react-native';
 import { useState } from "react";
@@ -8,12 +7,14 @@ import CreateRequestFormTemplate from '../createRequestFormTemplate';
 
 
 const Step2 = () => {
-    const { date, time, duration, setDate, setTime, setDuration } = useCreateListingStore()
+    const [date, setDate] = useState<Date | undefined >()
+    const [time, setTime] = useState<Date | undefined>()
+    const [duration, setDuration] = useState<Date | undefined>()
 
     const [showDatePickerModal, setShowDatePickerModal]  = useState<boolean>(false)
     const [showStartTimePicker, setShowStartTimePicker]  = useState<boolean>(false)
     const [showDurationModal, setShowDurationModal]  = useState<boolean>(false)
-    
+
     const CURRENT_DATE = new Date();
     const MINIMUM_DATE = new Date(CURRENT_DATE)
     MINIMUM_DATE.setDate(MINIMUM_DATE.getDate() + 1)
