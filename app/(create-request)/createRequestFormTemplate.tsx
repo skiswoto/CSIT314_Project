@@ -1,26 +1,53 @@
 import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
 import { useCreateListingStore } from "@/global/createListingStore";
+import { supabase } from '@/libs/supabase';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
-
 
 type CreateListingFormTemplateProps = { 
     children?: React.ReactNode,
 }
 
 const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps) => {
-    const { currentStep, nextStep, previousStep, resetSteps } = useCreateListingStore()
+    const {
+        description,
+        category,
+        date,
+        time,
+        duration,
+        streetAddress,
+        unitLevel,
+        buildingName,
+        postCode
+    } = useCreateListingStore()
+    const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore()
     const router = useRouter()
     const stepsArray = (['/(create-request)/(steps)/step1', '/(create-request)/(steps)/step2', '/(create-request)/(steps)/step3'] as const)
 
-    const handleNextStep = () => {
+    const handleNextStep = async () => {
         const lastIndex = stepsArray.length - 1
         if (currentStep >= lastIndex) {
-            resetSteps()
-            router.push('/(tabs)/home')
-            return
+            // Store to Supabase for Persistence
+            try {
+                const { error } = await supabase.rpc('insert_listing', {
+                    description: description,
+                    category: category,
+                    listing_date: date,
+                    start_time: time,
+                    duration: duration,
+                    street_address: streetAddress,
+                    unit_level: unitLevel,
+                    building_name: buildingName,
+                    post_code: postCode
+                })
+                router.push('/(tabs)/home')
+                cancelProgress()
+                if (error) throw error
+            } catch (e) {
+                console.error(e)
+            }
         }
         const nextIndex = Math.min(currentStep + 1, lastIndex)
         nextStep()
@@ -32,12 +59,17 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         router.back()
     }
 
+    const handleCancelCreateListing = () => {
+        cancelProgress()
+        router.replace('/(tabs)/home')
+    }
+
     return (
         <>
             <StatusBar />
             <SafeAreaViewContainer>
                 <ScreenContainer> 
-                    <TopSection onPress={() => router.replace('/(tabs)/home')}>
+                    <TopSection onPress={handleCancelCreateListing}>
                         <X size={30} /> 
                     </TopSection>
                     <Content>
