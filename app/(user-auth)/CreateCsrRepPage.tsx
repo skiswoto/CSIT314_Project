@@ -1,73 +1,94 @@
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { useRouter } from 'expo-router';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { styled } from 'styled-components/native';
+import ModalTemplate from './modalTemplate';
+import { TopBar } from "./signUp";
+
 
 export default function CreateCsrRepPage({ setScreen }: any) {
     const [terms, setTerms] = useState(false);
     const [hidePassword, setHidePassword] = useState(true);
+    const router = useRouter()
 
+    const handleRevealPassword = () => {
+        setHidePassword(!hidePassword)
+    }
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-        {/* Back button at the top-left */}
-        <Pressable onPress={() => setScreen("main")} style={styles.backButton}>
-            <Text style={{ color: "blue" }}>← Back</Text>
-        </Pressable>
+        <ModalTemplate>
+            <TopBar onPress={() => router.back()}>
+                <ArrowLeft size={30}/>
+            </TopBar>
 
-        {/* Wrapper for Title and Form content */}
-        <View style={styles.formContainer}>
-            <Text style={styles.title}>Create CSR Rep account</Text>
-
-            <TextInput placeholder="Username" style={styles.input} />
-            <TextInput placeholder="Email" keyboardType="email-address" style={styles.input} />
-            
-            <View style={styles.passwordRow}>
-            <TextInput
-                placeholder="Password"
-                secureTextEntry={hidePassword}
-                style={[styles.input, { flex: 1 }]}
-            />
-            <Pressable onPress={() => setHidePassword(!hidePassword)}>
-                <Text style={styles.showHide}>{hidePassword ? "Show" : "Hide"}</Text>
-            </Pressable>
+            <View style={styles.formContainer}>
+                <Text style={styles.title}>Create CSR Rep account</Text>
             </View>
+            <Text style={styles.label}>Username</Text>
+            <TextInput placeholder="Username" placeholderTextColor="#BABABA" style={styles.input} />
+            <Text style={styles.label}>Email</Text>
+            <TextInput placeholder="Email" placeholderTextColor="#BABABA" keyboardType="email-address" style={styles.input} />
+
+            <Text style={styles.label}>Password</Text>
+            <Input>
+                <TextInput placeholder="Password" placeholderTextColor="#BABABA" keyboardType="default" style={styles.input} />
+                <RevealContainer onPress={handleRevealPassword}>
+                    {!hidePassword ? <Eye /> : <EyeOff />}
+                </RevealContainer>
+            </Input>
+
+            <Text style={styles.label}>Re-enter password</Text>
+            <Input>
+                <TextInput placeholder="Re-enter password" placeholderTextColor="#BABABA" keyboardType="default" style={styles.input} />
+                <RevealContainer onPress={handleRevealPassword}>
+                    {!hidePassword ? <Eye /> : <EyeOff />}
+                </RevealContainer>
+            </Input>
 
             <View style={styles.switchRow}>
-            <Switch value={terms} onValueChange={setTerms} />
-            <Text style={styles.switchLabel}>I accept the terms and conditions</Text>
+                <Switch value={terms} onValueChange={setTerms} />
+                <Text style={styles.switchLabel}>I accept the terms and conditions</Text>
             </View>
 
             <Pressable style={[styles.button, !terms && { opacity: 0.5 }]} disabled={!terms}>
-            <Text style={styles.buttonText}>Create account</Text>
+                <Text style={styles.buttonText}>Create account</Text>
             </Pressable>
-        </View>
-        </ScrollView>
+        </ModalTemplate>
     );
 }
 
-const styles = StyleSheet.create({
+export const Input = styled.View`
+    flex-direction: row;
+    justify-content: space-between;
+`
+export const RevealContainer = styled.Pressable`
+    position: absolute;
+    right: 14px;
+    top: 10px;
+`
+
+export const styles = StyleSheet.create({
     container: {
-        flexGrow: 1, // Allow scrolling
+        flexGrow: 1,
         backgroundColor: "#fff",
         padding: 24,
     },
-    // Back button in the top-left
     backButton: {
-        position: "absolute",  // Absolute positioning
-        top: 40,               // Margin from the top
-        left: 20,              // Margin from the left edge
+        position: "absolute",
+        top: 40,
+        left: 20,
         padding: 8,
     },
-    // Form container that centers everything
     formContainer: {
-        flex: 1,               // Allow the form to fill available space
-        justifyContent: "center",  // Vertically center the form
-        alignItems: "center",     // Horizontally center the form
-        marginTop: 80,          // Give space from the top (after the Back button)
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 40,
     },
     title: {
         fontSize: 22,
         fontWeight: "bold",
-        marginBottom: 20,
-        textAlign: "center",  // Ensures title is centered
+        marginBottom: 32,
     },
     input: {
         borderWidth: 1,
@@ -76,18 +97,41 @@ const styles = StyleSheet.create({
         padding: 12,
         fontSize: 16,
         marginBottom: 16,
-        width: "100%",  // Ensures inputs take up full width
+        width: "100%",    
     },
-    passwordRow: { flexDirection: "row", alignItems: "center" },
-    showHide: { marginLeft: 8, color: "#007AFF", fontWeight: "600" },
-    switchRow: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-    switchLabel: { marginLeft: 10 },
+    passwordRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    showHide: {
+        marginLeft: 8,
+            color: "#007AFF",
+            fontWeight: "600",
+        },
+        switchRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 16,
+    },
+    switchLabel: {
+        marginLeft: 10,
+    },
     button: {
-        backgroundColor: "black",
+        backgroundColor: "#2B61A6",
         paddingVertical: 14,
         borderRadius: 10,
         alignItems: "center",
-        width: "100%",  // Button takes up the full width
+        width: "100%",
     },
-    buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
+    buttonText: {
+        color: "white",
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#374151",
+        marginBottom: 8,
+    },
 });
