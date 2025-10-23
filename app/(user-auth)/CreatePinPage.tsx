@@ -19,15 +19,15 @@ export default function CreatePinPage({ setScreen }: any) {
     }
     return (
         <ModalTemplate>
-            <TopBar onPress={() => router.back()}>
+            <TopBar onPress={() => router.replace('/(tabs)/profile')}>
                 <ArrowLeft size={30}/>
             </TopBar>
 
             <View style={styles.formContainer}>
                 <Text style={styles.title}>Create PIN account</Text>
             </View>
-            <Text style={styles.label}>Username</Text>
-            <TextInput placeholder="Username" placeholderTextColor="#BABABA" style={styles.input} />
+            <Text style={styles.label}>Name</Text>
+            <TextInput placeholder="Name" placeholderTextColor="#BABABA" style={styles.input} />
             <Text style={styles.label}>Email</Text>
             <TextInput placeholder="Email" placeholderTextColor="#BABABA" keyboardType="email-address" style={styles.input} />
 

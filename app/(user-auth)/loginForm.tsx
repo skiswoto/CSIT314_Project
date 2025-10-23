@@ -15,7 +15,7 @@ const LoginForm: React.FC = () => {
 
     return (
         <ModalTemplate>
-            <TopBar onPress={() => router.back()}>
+            <TopBar onPress={() => router.replace('/(tabs)/profile')}>
                 <X size={30} />
             </TopBar>
             <Image
@@ -50,7 +50,7 @@ const LoginForm: React.FC = () => {
                 <Text style={styles.linkText}>Forgot Password?</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/(user-auth)/signUp')}>
+                <TouchableOpacity style={styles.linkButton} onPress={() => router.navigate('/(user-auth)/signUp')}>
                     <SignUpLinkRow>
                         <Text>Don&apos;t have an account?</Text>
                         <Text style={styles.linkText}>Sign Up</Text>
