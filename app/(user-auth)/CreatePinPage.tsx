@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { Input, RevealContainer } from './CreateCsrRepPage';
+import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Input, InputContainer, InputTitle, RevealContainer } from './CreateCsrRepPage';
 import ModalTemplate from './modalTemplate';
 import { TopBar } from "./signUp";
 
@@ -13,6 +13,9 @@ export default function CreatePinPage({ setScreen }: any) {
     const [shareLoc, setShareLoc] = useState(false);
     const [sms, setSms] = useState(false);
     const router = useRouter()
+    const [name, setName] = useState<string>('')
+    const [email, setEmail] = useState<string>('')
+    const [password, setPassword] = useState<string>('')
 
     const handleRevealPassword = () => {
         setHidePassword(!hidePassword)
@@ -22,29 +25,29 @@ export default function CreatePinPage({ setScreen }: any) {
             <TopBar onPress={() => router.replace('/(tabs)/profile')}>
                 <ArrowLeft size={30}/>
             </TopBar>
-
             <View style={styles.formContainer}>
                 <Text style={styles.title}>Create PIN account</Text>
             </View>
-            <Text style={styles.label}>Name</Text>
-            <TextInput placeholder="Name" placeholderTextColor="#BABABA" style={styles.input} />
-            <Text style={styles.label}>Email</Text>
-            <TextInput placeholder="Email" placeholderTextColor="#BABABA" keyboardType="email-address" style={styles.input} />
+            <InputTitle>Name</InputTitle>
+            <Input placeholder="Enter your full name" placeholderTextColor="#BABABA" value={name} onChangeText={(text: string) => setName(text)} />
+            <InputTitle>Email</InputTitle>
+            <Input placeholder="Enter your email" placeholderTextColor="#BABABA" keyboardType="email-address" value={email} onChangeText={(text: string) => setEmail(text)} autoCapitalize='none' />
+            <InputTitle>Password</InputTitle>
+            <InputContainer>
+                <Input placeholder="Password" placeholderTextColor="#BABABA" value={password} onChangeText={(text: string) => setPassword(text)} autoCapitalize='none' />
+                <RevealContainer onPress={handleRevealPassword}>
+                    {!hidePassword ? <Eye /> : <EyeOff />}
+                </RevealContainer>
+            </InputContainer>
+            <InputTitle>Re-enter password</InputTitle>
+            <InputContainer>
+                <Input placeholder="Re-enter password" placeholderTextColor="#BABABA" autoCapitalize='none'/>
+                <RevealContainer onPress={handleRevealPassword}>
+                    {!hidePassword ? <Eye /> : <EyeOff />}
+                </RevealContainer>
+            </InputContainer>
 
-            <Text style={styles.label}>Password</Text>
-            <Input>
-                <TextInput placeholder="Password" placeholderTextColor="#BABABA" keyboardType="default" style={styles.input} />
-                <RevealContainer onPress={handleRevealPassword}>
-                    {!hidePassword ? <Eye /> : <EyeOff />}
-                </RevealContainer>
-            </Input>
-            <Text style={styles.label}>Re-enter password</Text>
-            <Input>
-                <TextInput placeholder="Re-enter password" placeholderTextColor="#BABABA" keyboardType="default" style={styles.input} />
-                <RevealContainer onPress={handleRevealPassword}>
-                    {!hidePassword ? <Eye /> : <EyeOff />}
-                </RevealContainer>
-            </Input>
+
             <View style={{ marginTop: 14}} />
             <View style={styles.switchRow}>
                 <Switch value={shareLoc} onValueChange={setShareLoc} />

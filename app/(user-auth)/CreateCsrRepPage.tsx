@@ -15,29 +15,68 @@ export default function CreateCsrRepPage({ setScreen }: any) {
     const [name, setName] = useState<string>('')
     const [email, setEmail] = useState<string>('')
     const [password, setPassword] = useState<string>('')
+    const [confirmPassword, setConfirmPassword] = useState<string>('')
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
     const handleRevealPassword = () => {
         setHidePassword(!hidePassword)
     }
 
     const handleCSRSignUp = async() => {
+        if (!name.trim()) {
+            Alert.alert('Validation Error', 'Please enter your name')
+            return
+        }
+        if (!email.trim()) {
+            Alert.alert('Validation Error', 'Please enter your email')
+            return
+        }
+        if (!password.trim()) {
+            Alert.alert('Validation Error', 'Please enter a password')
+            return
+        }
+        if (password.length < 6) {
+            Alert.alert('Validation Error', 'Password must be at least 6 characters long')
+            return
+        }
+        if (password !== confirmPassword) {
+            Alert.alert('Validation Error', 'Passwords do not match')
+            return
+        }
+
+        setIsLoading(true)
         try {
+            //  ERROR  Signup error: [AuthApiError: Database error saving new user]
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
                     data: {
                         name: name,
+                        role: 'csr_rep'
                     }
                 }
             })
-            if (error) throw error
+            if (error) {
+                console.error('Signup error:', error)
+                Alert.alert(
+                    'Sign Up Failed', 
+                    error.message || 'An error occurred during signup. Please try again.'
+                )
+                return
+            }
             if (data) {
                 registrationSuccessful()
                 router.navigate('/(user-auth)/loginForm')
             }
-        } catch (e) {
-            console.error(e)
+        } catch (error) {
+            console.error('Unexpected error:', error)
+            Alert.alert(
+                'Sign Up Failed', 
+                'An unexpected error occurred. Please try again.'
+            )
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -54,6 +93,7 @@ export default function CreateCsrRepPage({ setScreen }: any) {
             { cancelable: true, },
         )
     }
+
     
     return (
         <ModalTemplate>
@@ -69,14 +109,28 @@ export default function CreateCsrRepPage({ setScreen }: any) {
             <Input placeholder="Enter your email" placeholderTextColor="#BABABA" keyboardType="email-address" value={email} onChangeText={(text: string) => setEmail(text)} autoCapitalize='none' />
             <InputTitle>Password</InputTitle>
             <InputContainer>
-                <Input placeholder="Password" placeholderTextColor="#BABABA" value={password} onChangeText={(text: string) => setPassword(text)} autoCapitalize='none' />
+                <Input 
+                    placeholder="Password" 
+                    placeholderTextColor="#BABABA" 
+                    value={password} 
+                    onChangeText={(text: string) => setPassword(text)} 
+                    autoCapitalize='none' 
+                    secureTextEntry={hidePassword}
+                />
                 <RevealContainer onPress={handleRevealPassword}>
                     {!hidePassword ? <Eye /> : <EyeOff />}
                 </RevealContainer>
             </InputContainer>
             <InputTitle>Re-enter password</InputTitle>
             <InputContainer>
-                <Input placeholder="Re-enter password" placeholderTextColor="#BABABA" autoCapitalize='none'/>
+                <Input 
+                    placeholder="Re-enter password" 
+                    placeholderTextColor="#BABABA" 
+                    value={confirmPassword} 
+                    onChangeText={(text: string) => setConfirmPassword(text)} 
+                    autoCapitalize='none'
+                    secureTextEntry={hidePassword}
+                />
                 <RevealContainer onPress={handleRevealPassword}>
                     {!hidePassword ? <Eye /> : <EyeOff />}
                 </RevealContainer>
@@ -85,8 +139,14 @@ export default function CreateCsrRepPage({ setScreen }: any) {
                 <Switch value={terms} onValueChange={setTerms} />
                 <Text style={styles.switchLabel}>I accept the terms and conditions</Text>
             </View>
-            <Pressable style={[styles.button, !terms && { opacity: 0.5 }]} disabled={!terms} onPress={handleCSRSignUp}>
-                <Text style={styles.buttonText}>Create account</Text>
+            <Pressable 
+                style={[styles.button, (!terms || isLoading) && { opacity: 0.5 }]} 
+                disabled={!terms || isLoading} 
+                onPress={handleCSRSignUp}
+            >
+                <Text style={styles.buttonText}>
+                    {isLoading ? 'Creating account...' : 'Create account'}
+                </Text>
             </Pressable>
         </ModalTemplate>
     );
