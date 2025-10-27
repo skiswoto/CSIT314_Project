@@ -43,10 +43,8 @@ export default function CreateCsrRepPage({ setScreen }: any) {
             Alert.alert('Validation Error', 'Passwords do not match')
             return
         }
-
         setIsLoading(true)
         try {
-            //  ERROR  Signup error: [AuthApiError: Database error saving new user]
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
@@ -83,7 +81,7 @@ export default function CreateCsrRepPage({ setScreen }: any) {
     const registrationSuccessful = () => {
         Alert.alert(
             'Sign Up Succesful',
-            'Welcome! Your account has been created successfully.',
+            'Welcome! Your CSR Rep account has been created successfully.',
             [
                 {
                     text: 'Continue',
@@ -93,7 +91,6 @@ export default function CreateCsrRepPage({ setScreen }: any) {
             { cancelable: true, },
         )
     }
-
     
     return (
         <ModalTemplate>
