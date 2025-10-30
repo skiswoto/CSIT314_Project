@@ -17,7 +17,7 @@ const SignUp: React.FC = () => {
 
     return (
         <ModalTemplate>
-            <TopBar onPress={() => router.back()}>
+            <TopBar onPress={() => router.replace('/(tabs)/profile')}>
                 <X size={30} />
             </TopBar>
             <Image

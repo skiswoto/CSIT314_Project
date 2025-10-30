@@ -1,21 +1,62 @@
+import { supabase } from '@/libs/supabase';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
-import React from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { styled } from 'styled-components/native';
 import ModalTemplate from './modalTemplate';
 import { TopBar } from './signUp';
 
+
 const LoginForm: React.FC = () => {
     const router = useRouter();
+    const [email, setEmail] = useState<string>('')
+    const [password, setPassword] = useState<string>('')
 
-    const handleLogin = () => {
-        console.log('Login attempt');
+    const handleLogin = async() => {
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email:  email,
+                password: password
+            })
+            if (error) {
+                console.error('Signup error:', error)
+                Alert.alert(
+                    'Log in Failed', 
+                    error.message || 'An error occurred during login. Please try again.'
+                )
+                return
+            }
+            if (data) {
+                loginSuccessful()
+                router.replace('/(tabs)/profile')
+            }
+        } catch (error) {
+            console.error('Unexpected error:', error)
+            Alert.alert(
+                'Log in Failed', 
+                'An unexpected error occurred. Please try again.'
+            )
+        }
     };
+
+    const loginSuccessful = () => {
+        Alert.alert(
+            'Log in Succesful',
+            'Welcome!',
+            [
+                {
+                    text: 'Continue',
+                    style: 'cancel',
+                },
+            ],
+            { cancelable: true, },
+        )
+    }
 
     return (
         <ModalTemplate>
-            <TopBar onPress={() => router.back()}>
+            <TopBar onPress={() => router.replace('/(tabs)/profile')}>
                 <X size={30} />
             </TopBar>
             <Image
@@ -26,11 +67,14 @@ const LoginForm: React.FC = () => {
             <Text style={styles.title}>Welcome Back!</Text>
             <Text style={styles.subtitle}>Login to your account</Text>
             <View style={styles.inputContainer}>
-                <Text style={styles.label}>Username</Text>
+                <Text style={styles.label}>Email</Text>
                 <TextInput
                 style={styles.input}
-                placeholder="Enter your username"
+                placeholder="Enter your email"
                 autoCapitalize="none"
+                keyboardType='email-address'
+                value={email}
+                onChangeText={(text: string) => setEmail(text)}
                 />
             </View>
             <View style={styles.inputContainer}>
@@ -40,6 +84,8 @@ const LoginForm: React.FC = () => {
                 placeholder="Enter your password"
                 secureTextEntry
                 autoCapitalize="none"
+                value={password}
+                onChangeText={(text: string) => setPassword(text)}
                 />
             </View>
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
@@ -49,8 +95,7 @@ const LoginForm: React.FC = () => {
                 <TouchableOpacity style={styles.linkButton}>
                 <Text style={styles.linkText}>Forgot Password?</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/(user-auth)/signUp')}>
+                <TouchableOpacity style={styles.linkButton} onPress={() => router.navigate('/(user-auth)/signUp')}>
                     <SignUpLinkRow>
                         <Text>Don&apos;t have an account?</Text>
                         <Text style={styles.linkText}>Sign Up</Text>

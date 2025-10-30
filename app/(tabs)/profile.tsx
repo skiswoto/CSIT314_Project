@@ -1,14 +1,22 @@
+import { userAuthStore } from '@/global/userAuthStore';
 import { Link } from 'expo-router';
 import { styled } from 'styled-components/native';
 import { H1, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 
 
 const Profile = () => {
+    const user = userAuthStore(s => s.user)
+    const userName = user?.user_metadata.name
+
     return (
         <>
             <SafeAreaViewContainer>
                 <ScrollContainer>
-                    <H1>profile</H1>
+                    {user ? 
+                        <H1>Hi {userName}!</H1> 
+                        : 
+                        <H1>profile</H1>
+                    }
                     <Link href="../(user-auth)/signUp" asChild>
                         <LoginButton>
                             <LoginButtonText>Log in or sign up</LoginButtonText>
