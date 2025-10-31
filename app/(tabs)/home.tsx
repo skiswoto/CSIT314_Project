@@ -3,7 +3,7 @@ import { AlertCircle, CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, S
 import { useState } from 'react';
 import { ImageBackground, StatusBar, StyleSheet } from 'react-native';
 import { styled } from 'styled-components/native';
-import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
+import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 
 // Sample data for matched requests
 const matchedRequests = [
@@ -75,14 +75,10 @@ const Home = () => {
     <>
       <StatusBar />
       <SafeAreaViewContainer>
-        {/* Fixed Header Section */}
         <HeaderSection>
-          {/* Menu Button */}
           <MenuContainer>
             <Menu size={26} />
           </MenuContainer>
-
-          {/* Search Bar and Filter */}
           <Bar>
             <SearchBar>
               <Search />
@@ -91,30 +87,25 @@ const Home = () => {
               <SlidersHorizontal />
             </Filter>
           </Bar>
-
-          {/* Tab Bar */}
           <TabBar>
             <TabButton 
               isActive={activeTab === 'available'}
               onPress={() => setActiveTab('available')}
             >
-              <LayoutList size={24} color={activeTab === 'available' ? '#4F46E5' : '#9CA3AF'} />
+              <LayoutList size={24} color={activeTab === 'available' ? '#000000' : '#9CA3AF'} />
               <TabText isActive={activeTab === 'available'}>Available</TabText>
             </TabButton>
             <TabButton 
               isActive={activeTab === 'completed'}
               onPress={() => setActiveTab('completed')}
             >
-              <CheckCircle size={24} color={activeTab === 'completed' ? '#4F46E5' : '#9CA3AF'} />
+              <CheckCircle size={24} color={activeTab === 'completed' ? '#000000' : '#9CA3AF'} />
               <TabText isActive={activeTab === 'completed'}>Completed</TabText>
             </TabButton>
           </TabBar>
         </HeaderSection>
-
-        {/* Scrollable Content Section */}
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
           {activeTab === 'available' ? (
-            // Available Tab Content
             <>
               <ListingCard
                 onPress={() => router.navigate('/(specific-listing)/sampleListing')}
@@ -162,12 +153,10 @@ const Home = () => {
               </ListingCard>
             </>
           ) : (
-            // Completed Tab Content
             <>
               <ResultsHeader>
                 <ResultsHeaderText>Matched Requests ({matchedRequests.length})</ResultsHeaderText>
               </ResultsHeader>
-
               {matchedRequests.map((request) => (
                 <ResultCard key={request.id}>
                   <TopRow>
@@ -182,7 +171,6 @@ const Home = () => {
                       <PinName>{request.pinName}</PinName>
                     </NameContainer>
                   </TopRow>
-
                   <CategoriesRow>
                     <CategoryTag backgroundColor="#F3F4F6">
                       <MapPin size={14} color="#374151" />
@@ -195,7 +183,6 @@ const Home = () => {
                       </CategoryText>
                     </CategoryTag>
                   </CategoriesRow>
-
                   <ViewMatchButton>
                     <ViewMatchButtonText>View Match</ViewMatchButtonText>
                   </ViewMatchButton>
@@ -204,8 +191,6 @@ const Home = () => {
             </>
           )}
         </ScrollContainer>
-
-        {/* Create Listing Button */}
         <CreateListingContainer>
           <SquarePen 
             size={26} 
@@ -228,7 +213,11 @@ const styles = StyleSheet.create({
   }
 });
 
-// Styled Components
+const ScrollContainer = styled.ScrollView`
+    margin-horizontal: 20px;
+    padding-top: 16px;
+`
+
 const HeaderSection = styled.View`
   background-color: #ffffff;
 `;
@@ -281,7 +270,7 @@ const TabBar = styled.View`
   flex-direction: row;
   background-color: #FFFFFF;
   padding-horizontal: 8px;
-  padding-vertical: 8px;
+  padding-vertical: 6px;
   border-radius: 12px;
   margin-bottom: 20px;
   margin-horizontal: 20px;
@@ -305,7 +294,7 @@ const TabButton = styled.TouchableOpacity<{ isActive: boolean }>`
 const TabText = styled.Text<{ isActive: boolean }>`
   font-size: 12px;
   font-weight: ${props => props.isActive ? '600' : '500'};
-  color: ${props => props.isActive ? '#4F46E5' : '#9CA3AF'};
+  color: ${props => props.isActive ? '#000000' : '#9CA3AF'};
   margin-top: 2px;
 `;
 
@@ -347,7 +336,7 @@ const IconContainer = styled.Pressable`
 `;
 
 const CreateListingContainer = styled.Pressable`
-  background-color: #2B61A6;
+  background-color: #000000;
   border-radius: 50px;
   position: absolute;
   bottom: 20px;
