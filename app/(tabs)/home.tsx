@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
-import { getAllListings } from '../../services/listings';
+import { getAllListings, ListingFilters } from '../../services/listings';
 import FilterBottomSheet from '../filter';
 
 // Sample data for matched requests
@@ -48,16 +48,34 @@ const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
   const [filterVisible, setFilterVisible] = useState(false);
-  const [appliedFilters, setAppliedFilters] = useState({
-    locations: [] as string[],
-    serviceTypes: [] as string[],
-    urgencies: [] as string[],
-    dateRange: { start: null as Date | null, end: null as Date | null }
+  
+  // Initialize with proper type
+  const [appliedFilters, setAppliedFilters] = useState<ListingFilters>({
+    locations: [],
+    serviceTypes: [],
+    urgencies: [],
+    dateRange: { start: null, end: null }
   });
 
-  const handleApplyFilters = (filters: any) => {
-    setAppliedFilters(filters);
+  // Update query to use filters
+  const { data: listings, isLoading, error } = useQuery({
+    queryKey: ['all-listings', appliedFilters],
+    queryFn: () => getAllListings(appliedFilters),
+  });
+
+  const handleApplyFilters = (filters: ListingFilters) => {
     console.log('Applied Filters:', filters);
+    setAppliedFilters(filters);
+  };
+
+  // Count active filters
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (appliedFilters.locations.length > 0) count += appliedFilters.locations.length;
+    if (appliedFilters.serviceTypes.length > 0) count += appliedFilters.serviceTypes.length;
+    if (appliedFilters.urgencies.length > 0) count += appliedFilters.urgencies.length;
+    if (appliedFilters.dateRange.start || appliedFilters.dateRange.end) count += 1;
+    return count;
   };
 
   const getUrgencyColor = (urgency: string) => {
@@ -86,16 +104,11 @@ const Home = () => {
     }
   };
 
-  const { data: listings, isLoading, error } = useQuery({
-    queryKey: ['all-listings'],
-    queryFn: getAllListings,
-  });
-
   console.log('Query state:', { 
     isLoading, 
     error: error?.message, 
     listingsCount: listings?.length,
-    listings: listings 
+    appliedFilters
   });
 
   return (
@@ -110,9 +123,17 @@ const Home = () => {
             <SearchBar>
               <Search />
             </SearchBar>
-            <Filter onPress={() => setFilterVisible(true)}>
-              <SlidersHorizontal />
-            </Filter>
+            <FilterButtonContainer>
+              <Filter onPress={() => setFilterVisible(true)}>
+                <SlidersHorizontal />
+              </Filter>
+              {/* Show badge with filter count */}
+              {getActiveFilterCount() > 0 && (
+                <FilterBadge>
+                  <FilterBadgeText>{getActiveFilterCount()}</FilterBadgeText>
+                </FilterBadge>
+              )}
+            </FilterButtonContainer>
           </Bar>
           <TabBar>
             <TabButton 
@@ -135,73 +156,103 @@ const Home = () => {
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
           {activeTab === 'available' ? (
             <>
-            {/* Loading State */}
-            {isLoading && (
-              <LoadingContainer>
-                <ActivityIndicator size="large" color="#2B61A6" />
-                <LoadingText>Loading listings...</LoadingText>
-              </LoadingContainer>
-            )}
+              {/* Show active filters summary */}
+              {getActiveFilterCount() > 0 && (
+                <ActiveFiltersContainer>
+                  <ActiveFiltersText>
+                    {getActiveFilterCount()} filter{getActiveFilterCount() > 1 ? 's' : ''} applied
+                  </ActiveFiltersText>
+                  <ClearFiltersButton onPress={() => setAppliedFilters({
+                    locations: [],
+                    serviceTypes: [],
+                    urgencies: [],
+                    dateRange: { start: null, end: null }
+                  })}>
+                    <ClearFiltersText>Clear all</ClearFiltersText>
+                  </ClearFiltersButton>
+                </ActiveFiltersContainer>
+              )}
 
-            {/* Error State */}
-            {error && (
-              <ErrorText>Error loading listings. Please try again.</ErrorText>
-            )}
+              {/* Loading State */}
+              {isLoading && (
+                <LoadingContainer>
+                  <ActivityIndicator size="large" color="#2B61A6" />
+                  <LoadingText>Loading listings...</LoadingText>
+                </LoadingContainer>
+              )}
 
-            {/* Map through real listings from Supabase */}
-            {!isLoading && listings && listings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                onPress={() => router.navigate({
-                  pathname: '/(specific-listing)/sampleListing',
-                  params: {
-                    listingId: listing.id,
-                    category: listing.category,
-                    description: listing.description,
-                    address: listing.street_address,
-                    startTime: listing.start_time,
-                    duration: listing.duration
-                  }
-                })}
-              >
-                <CardContent>
-                  <CardHeader>
-                    <CategoryBadge>
-                      <CategoryBadgeText>{listing.category}</CategoryBadgeText>
-                    </CategoryBadge>
-                    <CardActions>
-                      <ActionButton>
-                        <Heart size={20} color="#6B7280" />
-                      </ActionButton>
-                      <ActionButton>
-                        <MoveRight size={20} color="#6B7280" />
-                      </ActionButton>
-                    </CardActions>
-                  </CardHeader>
-                  
-                  <CardBody>
-                    <ListingTitle>{listing.category}</ListingTitle>
-                    <ListingSubtitle numberOfLines={3}>
-                      {listing.description}
-                    </ListingSubtitle>
-                  </CardBody>
-                  
-                  <CardFooter>
-                    <LocationRow>
-                      <MapPin size={16} color="#6B7280" />
-                      <ListingLocation numberOfLines={1}>
-                        {listing.street_address}
-                      </ListingLocation>
-                    </LocationRow>
-                  </CardFooter>
-                </CardContent>
-              </ListingCard>
-            ))}
+              {/* Error State */}
+              {error && (
+                <ErrorText>Error loading listings. Please try again.</ErrorText>
+              )}
 
-            {/* Empty State */}
-            {!isLoading && listings && listings.length === 0 && (
-              <EmptyText>No listings available yet.</EmptyText>
-            )}
+              {/* Map through real listings from Supabase */}
+              {!isLoading && listings && listings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  onPress={() => router.navigate({
+                    pathname: '/(specific-listing)/sampleListing',
+                    params: {
+                      listingId: listing.id,
+                      category: listing.category,
+                      description: listing.description,
+                      address: listing.street_address,
+                      startTime: listing.start_time,
+                      duration: listing.duration,
+                      urgency: listing.urgency
+                    }
+                  })}
+                >
+                  <CardContent>
+                    <CardHeader>
+                      <CategoryBadge>
+                        <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+                      </CategoryBadge>
+                      <CardActions>
+                        <ActionButton>
+                          <Heart size={20} color="#6B7280" />
+                        </ActionButton>
+                        <ActionButton>
+                          <MoveRight size={20} color="#6B7280" />
+                        </ActionButton>
+                      </CardActions>
+                    </CardHeader>
+                    
+                    <CardBody>
+                      <ListingTitle>{listing.category}</ListingTitle>
+                      <ListingSubtitle numberOfLines={3}>
+                        {listing.description}
+                      </ListingSubtitle>
+                    </CardBody>
+                    
+                    <CardFooter>
+                      <LocationRow>
+                        <MapPin size={16} color="#6B7280" />
+                        <ListingLocation numberOfLines={1}>
+                          {listing.street_address}
+                        </ListingLocation>
+                      </LocationRow>
+                      {/* Show urgency badge if available */}
+                      {listing.urgency && (
+                        <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
+                          <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
+                            {listing.urgency} Priority
+                          </UrgencyText>
+                        </UrgencyBadge>
+                      )}
+                    </CardFooter>
+                  </CardContent>
+                </ListingCard>
+              ))}
+
+              {/* Empty State */}
+              {!isLoading && listings && listings.length === 0 && (
+                <EmptyText>
+                  {getActiveFilterCount() > 0 
+                    ? 'No listings match your filters. Try adjusting them.' 
+                    : 'No listings available yet.'}
+                </EmptyText>
+              )}
             </>
           ) : (
             <>
@@ -318,6 +369,56 @@ const Filter = styled.Pressable`
   overflow: hidden;
 `;
 
+const FilterButtonContainer = styled.View`
+  position: relative;
+`;
+
+const FilterBadge = styled.View`
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #EF4444;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding-horizontal: 4px;
+  z-index: 1;
+`;
+
+const FilterBadgeText = styled.Text`
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+`;
+
+const ActiveFiltersContainer = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #F3F4F6;
+  border-radius: 8px;
+  margin-bottom: 16px;
+`;
+
+const ActiveFiltersText = styled.Text`
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+`;
+
+const ClearFiltersButton = styled.TouchableOpacity`
+  padding: 4px 8px;
+`;
+
+const ClearFiltersText = styled.Text`
+  font-size: 14px;
+  color: #2B61A6;
+  font-weight: 600;
+`;
+
 const TabBar = styled.View`
   flex-direction: row;
   background-color: #FFFFFF;
@@ -415,6 +516,20 @@ const LocationRow = styled.View`
   flex-direction: row;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const UrgencyBadge = styled.View<{ backgroundColor: string }>`
+  background-color: ${props => props.backgroundColor};
+  padding: 6px 12px;
+  border-radius: 16px;
+  align-self: flex-start;
+`;
+
+const UrgencyText = styled.Text<{ color: string }>`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${props => props.color};
 `;
 
 const ListingTitle = styled.Text`
@@ -422,6 +537,20 @@ const ListingTitle = styled.Text`
   font-size: 22px;
   color: #111827;
   margin-bottom: 8px;
+`;
+
+const ListingSubtitle = styled.Text`
+  font-size: 15px;
+  font-weight: 400;
+  color: #6B7280;
+  line-height: 22px;
+`;
+
+const ListingLocation = styled.Text`
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  flex: 1;
 `;
 
 const CreateListingContainer = styled.Pressable`
@@ -558,18 +687,4 @@ const EmptyText = styled.Text`
   color: #6B7280;
   text-align: center;
   padding: 40px 20px;
-`;
-
-const ListingSubtitle = styled.Text`
-  font-size: 15px;
-  font-weight: 400;
-  color: #6B7280;
-  line-height: 22px;
-`;
-
-const ListingLocation = styled.Text`
-  font-size: 14px;
-  font-weight: 500;
-  color: #6B7280;
-  flex: 1;
 `;
