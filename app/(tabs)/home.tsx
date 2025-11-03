@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ImageBackground, StatusBar, StyleSheet } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import FilterBottomSheet from '../filter';
 
 // Sample data for matched requests
 const matchedRequests = [
@@ -45,6 +46,19 @@ const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
 
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({
+    locations: [] as string[],
+    serviceTypes: [] as string[],
+    urgencies: [] as string[],
+    dateRange: { start: null as Date | null, end: null as Date | null }
+  });
+
+  const handleApplyFilters = (filters: any) => {
+    setAppliedFilters(filters);
+    console.log('Applied Filters:', filters);
+  };
+
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case 'High':
@@ -83,7 +97,7 @@ const Home = () => {
             <SearchBar>
               <Search />
             </SearchBar>
-            <Filter>
+            <Filter onPress={() => setFilterVisible(true)}>
               <SlidersHorizontal />
             </Filter>
           </Bar>
@@ -199,6 +213,14 @@ const Home = () => {
           />
         </CreateListingContainer>
       </SafeAreaViewContainer>
+
+      {/* Filter Bottom Sheet */}
+      <FilterBottomSheet
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        onApply={handleApplyFilters}
+        currentFilters={appliedFilters}
+      />
     </>
   );
 };
