@@ -1,3 +1,4 @@
+// services/listings.ts
 import { supabase } from '../libs/supabase';
 
 export interface Listing {
@@ -12,44 +13,63 @@ export interface Listing {
   unit_level: string;
   building_name: string;
   post_code: string;
-  urgency: string;
+  urgency?: string; // Added urgency field
 }
-
 export interface ListingFilters {
-  location?: string; // post_code or street_address
-  category?: string; // service type
-  urgency?: string; // urgency (L/M/H)
+  locations: string[];
+  serviceTypes: string[];
+  urgencies: string[];
+  dateRange: {
+    start: Date | null;
+    end: Date | null;
+  };
 }
 
-export const getAllListings = async () => {
-    const { data, error } = await supabase
-        .from('Listings')
-        .select('*')
-        .order('created_at', {ascending: false});
-    if (error) {
-        console.error('Error fetching listing: ', error );
-        throw error;
-    }
-
-    return data as Listing[];
-};
-
-export const getFilteredListings = async (filters: ListingFilters = {}) => {
+export const getAllListings = async (filters?: ListingFilters) => {
+  console.log('Fetching listings with filters:', filters);
+  
   let query = supabase
     .from('Listings')
     .select('*')
     .order('created_at', { ascending: false });
 
-  // Apply filters if provided
-  if (filters.location) {
-    query = query.or(`post_code.ilike.%${filters.location}%,street_address.ilike.%${filters.location}%`);
+  // Apply location filters (if any selected)
+  if (filters?.locations && filters.locations.length > 0) {
+    // Search in both street_address for any of the selected locations
+    const locationConditions = filters.locations
+      .map(loc => `street_address.ilike.%${loc}%`)
+      .join(',');
+    query = query.or(locationConditions);
   }
 
-  if (filters.category) {
-    query = query.eq('category', filters.category);
+  // Apply service type filters (maps to category field)
+  if (filters?.serviceTypes && filters.serviceTypes.length > 0) {
+    query = query.in('category', filters.serviceTypes);
+  }
+
+  // Apply urgency filters
+  if (filters?.urgencies && filters.urgencies.length > 0) {
+    query = query.in('urgency', filters.urgencies);
+  }
+
+  // Apply date range filters
+  if (filters?.dateRange?.start) {
+    const startDate = filters.dateRange.start.toISOString().split('T')[0];
+    query = query.gte('listing_date', startDate);
+  }
+  
+  if (filters?.dateRange?.end) {
+    const endDate = filters.dateRange.end.toISOString().split('T')[0];
+    query = query.lte('listing_date', endDate);
   }
 
   const { data, error } = await query;
+
+  console.log('Supabase filtered response:', { 
+    dataCount: data?.length,
+    error, 
+    filtersApplied: filters 
+  });
 
   if (error) {
     console.error('Error fetching listings:', error);
@@ -57,15 +77,4 @@ export const getFilteredListings = async (filters: ListingFilters = {}) => {
   }
 
   return data as Listing[];
-};
-
-export const getListingById = async (id: string) => {
-  const { data, error } = await supabase
-    .from('Listings')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
-  return data as Listing;
 };
