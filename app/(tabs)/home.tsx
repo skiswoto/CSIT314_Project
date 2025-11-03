@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AlertCircle, CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
 import { useState } from 'react';
-import { ImageBackground, StatusBar, StyleSheet } from 'react-native';
+import { ActivityIndicator, ImageBackground, StatusBar, StyleSheet } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import { getAllListings } from '../../services/listings';
 import FilterBottomSheet from '../filter';
 
 // Sample data for matched requests
@@ -85,6 +87,18 @@ const Home = () => {
     }
   };
 
+  const { data: listings, isLoading, error } = useQuery({
+    queryKey: ['all-listings'],
+    queryFn: getAllListings,
+  });
+
+  console.log('Query state:', { 
+    isLoading, 
+    error: error?.message, 
+    listingsCount: listings?.length,
+    listings: listings 
+  });
+
   return (
     <>
       <StatusBar />
@@ -121,17 +135,50 @@ const Home = () => {
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
           {activeTab === 'available' ? (
             <>
+            {/* Loading State */}
+            {isLoading && (
+              <LoadingContainer>
+                <ActivityIndicator size="large" color="#2B61A6" />
+                <LoadingText>Loading listings...</LoadingText>
+              </LoadingContainer>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <ErrorText>Error loading listings. Please try again.</ErrorText>
+            )}
+
+            {/* Map through real listings from Supabase */}
+            {!isLoading && listings && listings.map((listing) => (
               <ListingCard
-                onPress={() => router.navigate('/(specific-listing)/sampleListing')}
+                key={listing.id}
+                onPress={() => router.navigate({
+                  pathname: '/(specific-listing)/sampleListing',
+                  params: {
+                    listingId: listing.id,
+                    category: listing.category,
+                    description: listing.description,
+                    address: listing.street_address,
+                    startTime: listing.start_time,
+                    duration: listing.duration
+                  }
+                })}
               >
                 <ImageBackground 
                   style={styles.image}
                   resizeMode="cover"
-                  source={require('../../assets/samples/bobby.jpg')}
+                  // Images placed here
+                  // source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }}
                 >
                   <Overlay>
                     <ListingTextColumn>
-                      <ListingTitle>Bobby, 60+</ListingTitle>
+                      <ListingTitle>{listing.category}</ListingTitle>
+                      <ListingSubtitle numberOfLines={2}>
+                        {listing.description}
+                      </ListingSubtitle>
+                      <ListingLocation>
+                        📍 {listing.street_address}
+                      </ListingLocation>
                     </ListingTextColumn>
                     <ListingIconColumn>
                       <IconContainer>
@@ -144,27 +191,12 @@ const Home = () => {
                   </Overlay>
                 </ImageBackground>
               </ListingCard>
-              <ListingCard>
-                <ImageBackground 
-                  style={styles.image}
-                  resizeMode="cover"
-                  source={require('../../assets/samples/sally.jpg')}
-                >
-                  <Overlay>
-                    <ListingTextColumn>
-                      <ListingTitle>Sally, 50+</ListingTitle>
-                    </ListingTextColumn>
-                    <ListingIconColumn>
-                      <IconContainer>
-                        <Heart />
-                      </IconContainer>
-                      <IconContainer>
-                        <MoveRight />
-                      </IconContainer>
-                    </ListingIconColumn>
-                  </Overlay>
-                </ImageBackground>
-              </ListingCard>
+            ))}
+
+            {/* Empty State */}
+            {!isLoading && listings && listings.length === 0 && (
+              <EmptyText>No listings available yet.</EmptyText>
+            )}
             </>
           ) : (
             <>
@@ -465,4 +497,44 @@ const ViewMatchButtonText = styled.Text`
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
+`;
+
+const LoadingContainer = styled.View`
+  padding: 40px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const LoadingText = styled.Text`
+  margin-top: 12px;
+  font-size: 14px;
+  color: #6B7280;
+`;
+
+const ErrorText = styled.Text`
+  font-size: 14px;
+  color: #EF4444;
+  text-align: center;
+  padding: 20px;
+`;
+
+const EmptyText = styled.Text`
+  font-size: 14px;
+  color: #6B7280;
+  text-align: center;
+  padding: 40px 20px;
+`;
+
+const ListingSubtitle = styled.Text`
+  font-size: 16px;
+  font-weight: 500;
+  color: #E5E7EB;
+  margin-top: 8px;
+`;
+
+const ListingLocation = styled.Text`
+  font-size: 14px;
+  font-weight: 400;
+  color: #D1D5DB;
+  margin-top: 8px;
 `;
