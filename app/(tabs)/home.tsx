@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AlertCircle, CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, ImageBackground, StatusBar, StyleSheet } from 'react-native';
+import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { getAllListings, ListingFilters } from '../../services/listings';
@@ -57,7 +57,7 @@ const Home = () => {
     dateRange: { start: null, end: null }
   });
 
-  // Update query to use filters - THIS IS THE KEY CHANGE
+  // Update query to use filters
   const { data: listings, isLoading, error } = useQuery({
     queryKey: ['all-listings', appliedFilters],
     queryFn: () => getAllListings(appliedFilters),
@@ -152,6 +152,7 @@ const Home = () => {
             </TabButton>
           </TabBar>
         </HeaderSection>
+
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
           {activeTab === 'available' ? (
             <>
@@ -202,39 +203,45 @@ const Home = () => {
                     }
                   })}
                 >
-                  <ImageBackground 
-                    style={styles.image}
-                    resizeMode="cover"
-                    source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }}
-                  >
-                    <Overlay>
-                      <ListingTextColumn>
-                        <ListingTitle>{listing.category}</ListingTitle>
-                        <ListingSubtitle numberOfLines={2}>
-                          {listing.description}
-                        </ListingSubtitle>
-                        <ListingLocation>
-                          📍 {listing.street_address}
+                  <CardContent>
+                    <CardHeader>
+                      <CategoryBadge>
+                        <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+                      </CategoryBadge>
+                      <CardActions>
+                        <ActionButton>
+                          <Heart size={20} color="#6B7280" />
+                        </ActionButton>
+                        <ActionButton>
+                          <MoveRight size={20} color="#6B7280" />
+                        </ActionButton>
+                      </CardActions>
+                    </CardHeader>
+                    
+                    <CardBody>
+                      <ListingTitle>{listing.category}</ListingTitle>
+                      <ListingSubtitle numberOfLines={3}>
+                        {listing.description}
+                      </ListingSubtitle>
+                    </CardBody>
+                    
+                    <CardFooter>
+                      <LocationRow>
+                        <MapPin size={16} color="#6B7280" />
+                        <ListingLocation numberOfLines={1}>
+                          {listing.street_address}
                         </ListingLocation>
-                        {/* Show urgency badge */}
-                        {listing.urgency && (
-                          <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
-                            <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
-                              {listing.urgency} Priority
-                            </UrgencyText>
-                          </UrgencyBadge>
-                        )}
-                      </ListingTextColumn>
-                      <ListingIconColumn>
-                        <IconContainer>
-                          <Heart />
-                        </IconContainer>
-                        <IconContainer>
-                          <MoveRight />
-                        </IconContainer>
-                      </ListingIconColumn>
-                    </Overlay>
-                  </ImageBackground>
+                      </LocationRow>
+                      {/* Show urgency badge if available */}
+                      {listing.urgency && (
+                        <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
+                          <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
+                            {listing.urgency} Priority
+                          </UrgencyText>
+                        </UrgencyBadge>
+                      )}
+                    </CardFooter>
+                  </CardContent>
                 </ListingCard>
               ))}
 
@@ -286,6 +293,7 @@ const Home = () => {
             </>
           )}
         </ScrollContainer>
+
         <CreateListingContainer>
           <SquarePen 
             size={26} 
@@ -307,14 +315,6 @@ const Home = () => {
 };
 
 export default Home;
-
-const styles = StyleSheet.create({
-  image: {
-    width: '100%',
-    height: 380,
-    borderRadius: 20,
-  }
-});
 
 const ScrollContainer = styled.ScrollView`
     margin-horizontal: 20px;
@@ -369,6 +369,56 @@ const Filter = styled.Pressable`
   overflow: hidden;
 `;
 
+const FilterButtonContainer = styled.View`
+  position: relative;
+`;
+
+const FilterBadge = styled.View`
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #EF4444;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding-horizontal: 4px;
+  z-index: 1;
+`;
+
+const FilterBadgeText = styled.Text`
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+`;
+
+const ActiveFiltersContainer = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #F3F4F6;
+  border-radius: 8px;
+  margin-bottom: 16px;
+`;
+
+const ActiveFiltersText = styled.Text`
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+`;
+
+const ClearFiltersButton = styled.TouchableOpacity`
+  padding: 4px 8px;
+`;
+
+const ClearFiltersText = styled.Text`
+  font-size: 14px;
+  color: #2B61A6;
+  font-weight: 600;
+`;
+
 const TabBar = styled.View`
   flex-direction: row;
   background-color: #FFFFFF;
@@ -402,40 +452,105 @@ const TabText = styled.Text<{ isActive: boolean }>`
 `;
 
 const ListingCard = styled.TouchableOpacity`
-  height: 380px;
-  width: 99%;
-  border-radius: 30px;
-  overflow: hidden;
-  margin-vertical: 4px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  elevation: 2;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.08;
+  shadow-radius: 4px;
+  border-width: 1px;
+  border-color: #E5E7EB;
 `;
 
-const Overlay = styled.View`
-  flex: 1;
+const CardContent = styled.View`
+  padding: 20px;
+`;
+
+const CardHeader = styled.View`
   flex-direction: row;
-  padding-vertical: 16px;
-  padding-horizontal: 20px;
-`;
-
-const ListingTextColumn = styled.View`
-  flex: 1;
-  justify-content: flex-end;
-`;
-
-const ListingIconColumn = styled.View`
-  flex-direction: column;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const CategoryBadge = styled.View`
+  background-color: #DBEAFE;
+  padding-horizontal: 12px;
+  padding-vertical: 6px;
+  border-radius: 20px;
+`;
+
+const CategoryBadgeText = styled.Text`
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E40AF;
+  text-transform: uppercase;
+`;
+
+const CardActions = styled.View`
+  flex-direction: row;
+  gap: 8px;
+`;
+
+const ActionButton = styled.Pressable`
+  background-color: #F9FAFB;
+  padding: 8px;
+  border-radius: 20px;
+  border-width: 1px;
+  border-color: #E5E7EB;
+`;
+
+const CardBody = styled.View`
+  margin-bottom: 16px;
+`;
+
+const CardFooter = styled.View`
+  padding-top: 16px;
+  border-top-width: 1px;
+  border-top-color: #F3F4F6;
+`;
+
+const LocationRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+`;
+
+const UrgencyBadge = styled.View<{ backgroundColor: string }>`
+  background-color: ${props => props.backgroundColor};
+  padding: 6px 12px;
+  border-radius: 16px;
+  align-self: flex-start;
+`;
+
+const UrgencyText = styled.Text<{ color: string }>`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${props => props.color};
 `;
 
 const ListingTitle = styled.Text`
   font-weight: 700;
-  font-size: 30px;
-  color: #ffffff;
+  font-size: 22px;
+  color: #111827;
+  margin-bottom: 8px;
 `;
 
-const IconContainer = styled.Pressable`
-  background-color: #F3F4F6;
-  padding: 10px;
-  border-radius: 30px;
+const ListingSubtitle = styled.Text`
+  font-size: 15px;
+  font-weight: 400;
+  color: #6B7280;
+  line-height: 22px;
+`;
+
+const ListingLocation = styled.Text`
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  flex: 1;
 `;
 
 const CreateListingContainer = styled.Pressable`
@@ -572,82 +687,4 @@ const EmptyText = styled.Text`
   color: #6B7280;
   text-align: center;
   padding: 40px 20px;
-`;
-
-const ListingSubtitle = styled.Text`
-  font-size: 16px;
-  font-weight: 500;
-  color: #E5E7EB;
-  margin-top: 8px;
-`;
-
-const ListingLocation = styled.Text`
-  font-size: 14px;
-  font-weight: 400;
-  color: #D1D5DB;
-  margin-top: 8px;
-`;
-
-const FilterButtonContainer = styled.View`
-  position: relative;
-`;
-
-const FilterBadge = styled.View`
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background-color: #EF4444;
-  border-radius: 10px;
-  min-width: 18px;
-  height: 18px;
-  align-items: center;
-  justify-content: center;
-  padding-horizontal: 4px;
-  z-index: 1;
-`;
-
-const FilterBadgeText = styled.Text`
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 600;
-`;
-
-const ActiveFiltersContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #F3F4F6;
-  border-radius: 8px;
-  margin-bottom: 16px;
-`;
-
-const ActiveFiltersText = styled.Text`
-  font-size: 14px;
-  color: #374151;
-  font-weight: 500;
-`;
-
-const ClearFiltersButton = styled.TouchableOpacity`
-  padding: 4px 8px;
-`;
-
-const ClearFiltersText = styled.Text`
-  font-size: 14px;
-  color: #2B61A6;
-  font-weight: 600;
-`;
-
-const UrgencyBadge = styled.View<{ backgroundColor: string }>`
-  background-color: ${props => props.backgroundColor};
-  padding: 6px 12px;
-  border-radius: 16px;
-  align-self: flex-start;
-  margin-top: 8px;
-`;
-
-const UrgencyText = styled.Text<{ color: string }>`
-  font-size: 12px;
-  font-weight: 600;
-  color: ${props => props.color};
 `;

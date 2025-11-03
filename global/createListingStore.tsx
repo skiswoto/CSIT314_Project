@@ -2,11 +2,13 @@ import { create } from 'zustand'
 
 
 type Category = 'medical' | 'transport' | 'household' | 'groceries' | 'emotional'
+type Urgency = 'High' | 'Medium' | 'Low'
 
 type State = {
     currentStep: number
     description: string
     category?: Category
+    urgency?: Urgency
     date?: Date
     time?: Date
     duration?: Date
@@ -22,6 +24,7 @@ type Action = {
     setStep: (index: number) => void
     setDescription: (text: string) => void
     setCategory: (category: Category) => void
+    setUrgency: (urgency: Urgency) => void
     setDate: (date: Date) => void
     setTime: (time: Date) => void
     setDuration: (duration: Date) => void
@@ -36,6 +39,7 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     currentStep: 0,
     description: '',
     category: undefined,
+    urgency: undefined, 
     date: undefined,
     time: undefined,
     duration: undefined,
@@ -48,6 +52,7 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     setStep: (index: number) => set(() => ({ currentStep: Math.max(index, 0) })),
     setDescription: (text) => set(() => ({ description: text })),
     setCategory: (category) => set(() => ({ category })),
+    setUrgency: (urgency) => set(() => ({ urgency })), // Add this line
     setDate: (date: Date) => set(() => ({ date: date})),
     setTime: (time: Date) => set(() => ({ time: time})),
     setDuration: (duration: Date) => set(() => ({ duration: duration})),
@@ -59,6 +64,7 @@ export const useCreateListingStore = create<State & Action>((set) => ({
         currentStep: 0,
         description: '',
         category: undefined,
+        urgency: undefined, 
         date: undefined,
         time: undefined,
         duration: undefined,
@@ -68,4 +74,3 @@ export const useCreateListingStore = create<State & Action>((set) => ({
         postCode: '',
     }))
 }))
-
