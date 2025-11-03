@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AlertCircle, CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, ImageBackground, StatusBar, StyleSheet } from 'react-native';
+import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { getAllListings } from '../../services/listings';
@@ -47,7 +47,6 @@ const matchedRequests = [
 const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
-
   const [filterVisible, setFilterVisible] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState({
     locations: [] as string[],
@@ -132,6 +131,7 @@ const Home = () => {
             </TabButton>
           </TabBar>
         </HeaderSection>
+
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
           {activeTab === 'available' ? (
             <>
@@ -164,32 +164,37 @@ const Home = () => {
                   }
                 })}
               >
-                <ImageBackground 
-                  style={styles.image}
-                  resizeMode="cover"
-                  // Images placed here
-                  // source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }}
-                >
-                  <Overlay>
-                    <ListingTextColumn>
-                      <ListingTitle>{listing.category}</ListingTitle>
-                      <ListingSubtitle numberOfLines={2}>
-                        {listing.description}
-                      </ListingSubtitle>
-                      <ListingLocation>
-                        📍 {listing.street_address}
+                <CardContent>
+                  <CardHeader>
+                    <CategoryBadge>
+                      <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+                    </CategoryBadge>
+                    <CardActions>
+                      <ActionButton>
+                        <Heart size={20} color="#6B7280" />
+                      </ActionButton>
+                      <ActionButton>
+                        <MoveRight size={20} color="#6B7280" />
+                      </ActionButton>
+                    </CardActions>
+                  </CardHeader>
+                  
+                  <CardBody>
+                    <ListingTitle>{listing.category}</ListingTitle>
+                    <ListingSubtitle numberOfLines={3}>
+                      {listing.description}
+                    </ListingSubtitle>
+                  </CardBody>
+                  
+                  <CardFooter>
+                    <LocationRow>
+                      <MapPin size={16} color="#6B7280" />
+                      <ListingLocation numberOfLines={1}>
+                        {listing.street_address}
                       </ListingLocation>
-                    </ListingTextColumn>
-                    <ListingIconColumn>
-                      <IconContainer>
-                        <Heart />
-                      </IconContainer>
-                      <IconContainer>
-                        <MoveRight />
-                      </IconContainer>
-                    </ListingIconColumn>
-                  </Overlay>
-                </ImageBackground>
+                    </LocationRow>
+                  </CardFooter>
+                </CardContent>
               </ListingCard>
             ))}
 
@@ -237,6 +242,7 @@ const Home = () => {
             </>
           )}
         </ScrollContainer>
+
         <CreateListingContainer>
           <SquarePen 
             size={26} 
@@ -258,14 +264,6 @@ const Home = () => {
 };
 
 export default Home;
-
-const styles = StyleSheet.create({
-  image: {
-    width: '100%',
-    height: 380,
-    borderRadius: 20,
-  }
-});
 
 const ScrollContainer = styled.ScrollView`
     margin-horizontal: 20px;
@@ -353,40 +351,77 @@ const TabText = styled.Text<{ isActive: boolean }>`
 `;
 
 const ListingCard = styled.TouchableOpacity`
-  height: 380px;
-  width: 99%;
-  border-radius: 30px;
-  overflow: hidden;
-  margin-vertical: 4px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  elevation: 2;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.08;
+  shadow-radius: 4px;
+  border-width: 1px;
+  border-color: #E5E7EB;
 `;
 
-const Overlay = styled.View`
-  flex: 1;
+const CardContent = styled.View`
+  padding: 20px;
+`;
+
+const CardHeader = styled.View`
   flex-direction: row;
-  padding-vertical: 16px;
-  padding-horizontal: 20px;
-`;
-
-const ListingTextColumn = styled.View`
-  flex: 1;
-  justify-content: flex-end;
-`;
-
-const ListingIconColumn = styled.View`
-  flex-direction: column;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+`;
+
+const CategoryBadge = styled.View`
+  background-color: #DBEAFE;
+  padding-horizontal: 12px;
+  padding-vertical: 6px;
+  border-radius: 20px;
+`;
+
+const CategoryBadgeText = styled.Text`
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E40AF;
+  text-transform: uppercase;
+`;
+
+const CardActions = styled.View`
+  flex-direction: row;
+  gap: 8px;
+`;
+
+const ActionButton = styled.Pressable`
+  background-color: #F9FAFB;
+  padding: 8px;
+  border-radius: 20px;
+  border-width: 1px;
+  border-color: #E5E7EB;
+`;
+
+const CardBody = styled.View`
+  margin-bottom: 16px;
+`;
+
+const CardFooter = styled.View`
+  padding-top: 16px;
+  border-top-width: 1px;
+  border-top-color: #F3F4F6;
+`;
+
+const LocationRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 `;
 
 const ListingTitle = styled.Text`
   font-weight: 700;
-  font-size: 30px;
-  color: #ffffff;
-`;
-
-const IconContainer = styled.Pressable`
-  background-color: #F3F4F6;
-  padding: 10px;
-  border-radius: 30px;
+  font-size: 22px;
+  color: #111827;
+  margin-bottom: 8px;
 `;
 
 const CreateListingContainer = styled.Pressable`
@@ -526,15 +561,15 @@ const EmptyText = styled.Text`
 `;
 
 const ListingSubtitle = styled.Text`
-  font-size: 16px;
-  font-weight: 500;
-  color: #E5E7EB;
-  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #6B7280;
+  line-height: 22px;
 `;
 
 const ListingLocation = styled.Text`
   font-size: 14px;
-  font-weight: 400;
-  color: #D1D5DB;
-  margin-top: 8px;
+  font-weight: 500;
+  color: #6B7280;
+  flex: 1;
 `;
