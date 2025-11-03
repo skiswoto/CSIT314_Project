@@ -57,11 +57,12 @@ const CloseButton = styled.TouchableOpacity`
 `;
 
 const ContentScroll = styled.ScrollView`
-  padding: 0 24px;
+  padding: 16px 24px 0;
 `;
 
 const FilterSection = styled.View`
-  margin-top: 24px;
+  margin-top: 20px;
+  padding-bottom: 8px;
 `;
 
 const SectionHeader = styled.View`
@@ -328,7 +329,7 @@ const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({
   onClose,
   onApply,
   currentFilters,
-  availableLocations = [] // Pass this from your database
+  availableLocations // Not used anymore, using hardcoded LOCATIONS instead
 }) => {
   const [filters, setFilters] = useState<FilterState>(
     currentFilters || {
@@ -529,7 +530,7 @@ const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({
               {locationDropdownOpen && (
                 <DropdownContent>
                   <DropdownScrollView>
-                    {availableLocations.map(location => (
+                    {LOCATIONS.map(location => (
                       <DropdownOption
                         key={location}
                         isSelected={filters.locations.includes(location)}
