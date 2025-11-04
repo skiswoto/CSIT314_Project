@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-import { FileUser, User, UserRoundSearch } from 'lucide-react-native'
+import { BarChart3, FileUser, User, UserRoundSearch } from 'lucide-react-native'
 
 const TabLayout = (): React.ReactElement => {
     return (
@@ -34,6 +34,13 @@ const TabLayout = (): React.ReactElement => {
                     title:'Saved Requests',
                     headerShown: false, 
                     tabBarIcon: () => <FileUser />
+                }}
+            />
+            <Tabs.Screen 
+                name="analytics"
+                options={{
+                tabBarIcon: ({ color}) => <BarChart3 size={24} color={color} />,
+                tabBarLabel: 'Analytics',
                 }}
             />
             <Tabs.Screen 
