@@ -13,7 +13,8 @@ export interface Listing {
   unit_level: string;
   building_name: string;
   post_code: string;
-  urgency?: string; // Added urgency field
+  urgency?: string;
+  status?: string
 }
 export interface ListingFilters {
   locations: string[];
@@ -23,6 +24,7 @@ export interface ListingFilters {
     start: Date | null;
     end: Date | null;
   };
+  status?: string;
 }
 
 export const getAllListings = async (filters?: ListingFilters) => {
@@ -32,6 +34,10 @@ export const getAllListings = async (filters?: ListingFilters) => {
     .from('Listings')
     .select('*')
     .order('created_at', { ascending: false });
+
+    if (filters?.status){
+      query = query.eq('status', filters.status)
+    }
 
   // Apply location filters (if any selected)
   if (filters?.locations && filters.locations.length > 0) {
