@@ -8,7 +8,6 @@ export const exportToText = async (listings: Listing[]) => {
     const report = generateTextReport(listings);
     const fileName = `service_report_${getDateStamp()}.txt`;
     
-    // Create file using modern API
     const file = new File(Paths.document, fileName);
     await file.write(report);
 
@@ -45,7 +44,6 @@ export const exportToCSV = async (listings: Listing[]) => {
     const csv = generateCSV(listings);
     const fileName = `service_export_${getDateStamp()}.csv`;
     
-    // Create file using modern API
     const file = new File(Paths.document, fileName);
     await file.write(csv);
 
@@ -112,9 +110,6 @@ export const exportAnalyticsJSON = async (
     };
 
     const fileName = `analytics_export_${getDateStamp()}.json`;
-    
-
-    // Create file
     const file = new File(Paths.document, fileName);
     await file.write(JSON.stringify(jsonData, null, 2));
 
