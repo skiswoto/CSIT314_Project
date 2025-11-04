@@ -3,7 +3,7 @@ import { supabase } from '@/libs/supabase'
 import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { useRouter } from 'expo-router'
 import { FileCheck2, MoveLeft, UserCheck2, UsersRound } from 'lucide-react-native'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Dimensions, Pressable } from 'react-native'
 import { BarChart } from "react-native-gifted-charts"
 import { styled } from 'styled-components/native'
@@ -13,13 +13,40 @@ const SCREEN_WIDTH = Dimensions.get("screen").width
 const GenerateReport = () => {
     const router = useRouter()
     const [range, setRange] = useState<number>(0)
+    const [newListingStats, setNewListingStats] = useState<number>(0)
     
-    // rpc Function to compare and count
-    // Grab new sign ups from the last 24 hours
-        // current date - public.Profiles.created_at = < 24  # new user += 1
-    supabase.rpc('', {
-
-    })
+    useEffect(() => {
+        const FetchData = async() => {
+            try {
+                switch (range) {
+                    case 0: 
+                        const { data: NumofNewDailyListings, error: DailyListingsErr } = await supabase.rpc('grab_num_of_new_listings')
+                        if (DailyListingsErr) throw DailyListingsErr
+                        if (NumofNewDailyListings) setNewListingStats(NumofNewDailyListings)
+                        break
+                    case 1: 
+                        const { data: NumofNewWeeklyListings, error: WeeklyListingsErr } = await supabase.rpc('grab_num_of_new_listings', {
+                            time_range: '7d'
+                        })
+                        if (WeeklyListingsErr) throw WeeklyListingsErr
+                        if (NumofNewWeeklyListings) setNewListingStats(NumofNewWeeklyListings)
+                        break
+                    case 2: 
+                        const { data: NumofNewMonthlyListings, error: MonthlyListingsErr } = await supabase.rpc('grab_num_of_new_listings', {
+                            time_range: '30d'
+                        })
+                        if (MonthlyListingsErr) throw MonthlyListingsErr
+                        if (NumofNewMonthlyListings) setNewListingStats(NumofNewMonthlyListings)
+                        break
+                    default: 
+                        console.error('Date range invalid')
+                }
+            } catch(e) {
+                console.error("Error message: ", e)
+            }
+        }
+        FetchData()
+    }, [range])
 
     const UrgencyData = [ {value: 50}, {value: 80}, {value: 90} ]
     const ServiceData = [ 
@@ -58,9 +85,6 @@ const GenerateReport = () => {
                             <LongCardIcon $index={1}>
                                 <UserCheck2 size={46} color={'#ffffff'}/>
                             </LongCardIcon>
-                            <LongPercentageContainer>
-                                <LongPercentageText>+5%</LongPercentageText>
-                            </LongPercentageContainer>
                         </LongCardRow>
                         <LongCardRow>
                             <LongCardText>Sign ups</LongCardText>
@@ -74,15 +98,12 @@ const GenerateReport = () => {
                             <LongCardIcon $index={2}>
                                 <FileCheck2 size={46} color={'#ffffff'}/>
                             </LongCardIcon>
-                            <LongPercentageContainer>
-                                <LongPercentageText>+5%</LongPercentageText>
-                            </LongPercentageContainer>
                         </LongCardRow>
                         <LongCardRow>
                             <LongCardText>Listings created</LongCardText>
                         </LongCardRow>
                         <LongCardRow>
-                            <LongCardNumber>68</LongCardNumber>
+                            <LongCardNumber>{newListingStats}</LongCardNumber>
                         </LongCardRow>
                     </LongCard>
                 </LongContainer>
@@ -160,7 +181,7 @@ const DefaultCard = styled.View`
     border-radius: 20px;
 `
 const LongCard = styled(DefaultCard)<{ $primary?: boolean}>`
-    width: ${SCREEN_WIDTH / 2.3};
+    width: ${SCREEN_WIDTH / 2.3}px;
     height: 190px;
     background-color: ${props => props.$primary? "#4F46E5" : "#0A5913"};
 `
