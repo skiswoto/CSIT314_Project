@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Download, FileText, MapPin, Table, TrendingUp } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StatusBar } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { exportAnalyticsJSON, exportToCSV, exportToText } from '../../services/export';
@@ -50,7 +50,7 @@ const Analytics = () => {
   // Export handlers
   const handleExportText = async () => {
     if (!completedListings || completedListings.length === 0) {
-      alert('No data to export');
+      Alert.alert('No data to export');
       return;
     }
     
@@ -66,7 +66,7 @@ const Analytics = () => {
 
   const handleExportCSV = async () => {
     if (!completedListings || completedListings.length === 0) {
-      alert('No data to export');
+      Alert.alert('No data to export');
       return;
     }
     
@@ -82,7 +82,7 @@ const Analytics = () => {
 
   const handleExportJSON = async () => {
     if (!completedListings || completedListings.length === 0) {
-      alert('No data to export');
+      Alert.alert('No data to export');
       return;
     }
     
