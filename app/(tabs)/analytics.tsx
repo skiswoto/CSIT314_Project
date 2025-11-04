@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, MapPin, TrendingUp } from 'lucide-react-native';
+import { BarChart3, Download, FileText, MapPin, Table, TrendingUp } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
-import { exportToText } from '../../services/export';
+import { exportAnalyticsJSON, exportToCSV, exportToText } from '../../services/export';
 import { getAllListings } from '../../services/listings';
-
 
 const Analytics = () => {
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'year'>('month');
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch completed listings
   const { data: completedListings, isLoading } = useQuery({
@@ -48,15 +48,59 @@ const Analytics = () => {
     .sort(([,a], [,b]) => b - a)
     .slice(0, 5);
   
-  const handleExport = async () => {
-  if (completedListings) {
-    try {
-      await exportToText(completedListings); // or exportToCSV
-    } catch (error) {
-      alert('Failed to export: ' + error.message);
+  // Export handlers
+  const handleExportText = async () => {
+    if (!completedListings || completedListings.length === 0) {
+      alert('No data to export');
+      return;
     }
-  }
-};
+    
+    setIsExporting(true);
+    try {
+      await exportToText(completedListings);
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!completedListings || completedListings.length === 0) {
+      alert('No data to export');
+      return;
+    }
+    
+    setIsExporting(true);
+    try {
+      await exportToCSV(completedListings);
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportJSON = async () => {
+    if (!completedListings || completedListings.length === 0) {
+      alert('No data to export');
+      return;
+    }
+    
+    setIsExporting(true);
+    try {
+      await exportAnalyticsJSON(completedListings, {
+        totalCompleted,
+        totalHours,
+        categoryCounts,
+        locationCounts,
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -149,11 +193,54 @@ const Analytics = () => {
               )}
             </InsightSection>
 
-            {/* Export All Data */}
+            {/* Export Options */}
             <ExportSection>
-              <ExportButton onPress={handleExport}>
-                <ExportButtonText>Export Full Report</ExportButtonText>
-              </ExportButton>
+              <SectionHeader>
+                <Download size={20} color="#111827" />
+                <SectionTitle>Export Data</SectionTitle>
+              </SectionHeader>
+              
+              <ExportOptionsGrid>
+                <ExportOptionCard 
+                  onPress={handleExportText}
+                  disabled={isExporting || !completedListings || completedListings.length === 0}
+                >
+                  <ExportIconContainer backgroundColor="#DBEAFE">
+                    <FileText size={24} color="#1E40AF" />
+                  </ExportIconContainer>
+                  <ExportOptionLabel>Text Report</ExportOptionLabel>
+                  <ExportOptionDescription>Formatted report</ExportOptionDescription>
+                </ExportOptionCard>
+
+                <ExportOptionCard 
+                  onPress={handleExportCSV}
+                  disabled={isExporting || !completedListings || completedListings.length === 0}
+                >
+                  <ExportIconContainer backgroundColor="#DCFCE7">
+                    <Table size={24} color="#166534" />
+                  </ExportIconContainer>
+                  <ExportOptionLabel>CSV Export</ExportOptionLabel>
+                  <ExportOptionDescription>Excel compatible</ExportOptionDescription>
+                </ExportOptionCard>
+
+                <ExportOptionCard 
+                  onPress={handleExportJSON}
+                  disabled={isExporting || !completedListings || completedListings.length === 0}
+                >
+                  <ExportIconContainer backgroundColor="#FEF3C7">
+                    <BarChart3 size={24} color="#92400E" />
+                  </ExportIconContainer>
+                  <ExportOptionLabel>JSON Data</ExportOptionLabel>
+                  <ExportOptionDescription>With analytics</ExportOptionDescription>
+                </ExportOptionCard>
+              </ExportOptionsGrid>
+
+              {isExporting && (
+                <ExportingIndicator>
+                  <ActivityIndicator size="small" color="#2563EB" />
+                  <ExportingText>Preparing export...</ExportingText>
+                </ExportingIndicator>
+              )}
             </ExportSection>
           </ContentContainer>
         </ScrollView>
@@ -320,17 +407,63 @@ const ExportSection = styled.View`
   margin-top: 24px;
 `;
 
-const ExportButton = styled.TouchableOpacity`
-  background-color: #111827;
-  padding: 16px;
-  border-radius: 12px;
-  align-items: center;
+const ExportOptionsGrid = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
 `;
 
-const ExportButtonText = styled.Text`
-  color: #ffffff;
-  font-size: 16px;
+const ExportOptionCard = styled.TouchableOpacity<{ disabled?: boolean }>`
+  flex: 1;
+  min-width: 30%;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  padding: 16px;
+  align-items: center;
+  border-width: 1px;
+  border-color: #E5E7EB;
+  opacity: ${props => props.disabled ? 0.5 : 1};
+`;
+
+const ExportIconContainer = styled.View<{ backgroundColor: string }>`
+  width: 56px;
+  height: 56px;
+  background-color: ${props => props.backgroundColor};
+  border-radius: 28px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+`;
+
+const ExportOptionLabel = styled.Text`
+  font-size: 14px;
   font-weight: 600;
+  color: #111827;
+  text-align: center;
+  margin-bottom: 4px;
+`;
+
+const ExportOptionDescription = styled.Text`
+  font-size: 12px;
+  color: #6B7280;
+  text-align: center;
+`;
+
+const ExportingIndicator = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #F3F4F6;
+  border-radius: 8px;
+`;
+
+const ExportingText = styled.Text`
+  font-size: 14px;
+  color: #6B7280;
+  font-weight: 500;
 `;
 
 const LoadingContainer = styled.View`
