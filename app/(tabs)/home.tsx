@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { AlertCircle, CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
+import { CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
@@ -8,73 +8,82 @@ import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import FilterBottomSheet from '../filter';
 
-// Sample data for matched requests
-const matchedRequests = [
-  {
-    id: 1,
-    csrLogo: '🏢',
-    pinProfile: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    location: 'Jurong West',
-    urgency: 'High',
-    pinName: 'Sarah Chen'
-  },
-  {
-    id: 2,
-    csrLogo: '🏥',
-    pinProfile: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    location: 'Tampines',
-    urgency: 'Medium',
-    pinName: 'David Tan'
-  },
-  {
-    id: 3,
-    csrLogo: '🍲',
-    pinProfile: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    location: 'Bishan',
-    urgency: 'Low',
-    pinName: 'Emily Wong'
-  },
-  {
-    id: 4,
-    csrLogo: '🚗',
-    pinProfile: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    location: 'Clementi',
-    urgency: 'High',
-    pinName: 'Michael Lee'
-  }
-];
-
 const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
   const [filterVisible, setFilterVisible] = useState(false);
   
-  // Initialize with proper type
-  const [appliedFilters, setAppliedFilters] = useState<ListingFilters>({
+  // Separate filter states for each tab
+  const [availableFilters, setAvailableFilters] = useState<ListingFilters>({
     locations: [],
     serviceTypes: [],
     urgencies: [],
-    dateRange: { start: null, end: null }
+    dateRange: { start: null, end: null },
+    status: 'available' // Always filter for available
   });
 
-  // Update query to use filters
+  const [completedFilters, setCompletedFilters] = useState<ListingFilters>({
+    locations: [],
+    serviceTypes: [],
+    urgencies: [],
+    dateRange: { start: null, end: null },
+    status: 'completed' // Always filter for completed
+  });
+
+  // Get current filters based on active tab
+  const currentFilters = activeTab === 'available' ? availableFilters : completedFilters;
+
+  // Fetch listings based on current tab and filters
   const { data: listings, isLoading, error } = useQuery({
-    queryKey: ['all-listings', appliedFilters],
-    queryFn: () => getAllListings(appliedFilters),
+    queryKey: ['listings', activeTab, currentFilters],
+    queryFn: () => getAllListings(currentFilters),
   });
 
-  const handleApplyFilters = (filters: ListingFilters) => {
+  const handleApplyFilters = (filters: Omit<ListingFilters, 'status'>) => {
     console.log('Applied Filters:', filters);
-    setAppliedFilters(filters);
+    
+    // Update the appropriate filter state based on active tab
+    if (activeTab === 'available') {
+      setAvailableFilters({
+        ...filters,
+        status: 'available' // Preserve status
+      });
+    } else {
+      setCompletedFilters({
+        ...filters,
+        status: 'completed' // Preserve status
+      });
+    }
   };
 
-  // Count active filters
+  // Clear filters for current tab
+  const clearCurrentFilters = () => {
+    if (activeTab === 'available') {
+      setAvailableFilters({
+        locations: [],
+        serviceTypes: [],
+        urgencies: [],
+        dateRange: { start: null, end: null },
+        status: 'available'
+      });
+    } else {
+      setCompletedFilters({
+        locations: [],
+        serviceTypes: [],
+        urgencies: [],
+        dateRange: { start: null, end: null },
+        status: 'completed'
+      });
+    }
+  };
+
+  // Count active filters (excluding status)
   const getActiveFilterCount = () => {
     let count = 0;
-    if (appliedFilters.locations.length > 0) count += appliedFilters.locations.length;
-    if (appliedFilters.serviceTypes.length > 0) count += appliedFilters.serviceTypes.length;
-    if (appliedFilters.urgencies.length > 0) count += appliedFilters.urgencies.length;
-    if (appliedFilters.dateRange.start || appliedFilters.dateRange.end) count += 1;
+    if (currentFilters.locations.length > 0) count += currentFilters.locations.length;
+    if (currentFilters.serviceTypes.length > 0) count += currentFilters.serviceTypes.length;
+    if (currentFilters.urgencies.length > 0) count += currentFilters.urgencies.length;
+    if (currentFilters.dateRange.start || currentFilters.dateRange.end) count += 1;
     return count;
   };
 
@@ -108,7 +117,8 @@ const Home = () => {
     isLoading, 
     error: error?.message, 
     listingsCount: listings?.length,
-    appliedFilters
+    activeTab,
+    currentFilters
   });
 
   return (
@@ -127,7 +137,6 @@ const Home = () => {
               <Filter onPress={() => setFilterVisible(true)}>
                 <SlidersHorizontal />
               </Filter>
-              {/* Show badge with filter count */}
               {getActiveFilterCount() > 0 && (
                 <FilterBadge>
                   <FilterBadgeText>{getActiveFilterCount()}</FilterBadgeText>
@@ -154,143 +163,109 @@ const Home = () => {
         </HeaderSection>
 
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-          {activeTab === 'available' ? (
-            <>
-              {/* Show active filters summary */}
-              {getActiveFilterCount() > 0 && (
-                <ActiveFiltersContainer>
-                  <ActiveFiltersText>
-                    {getActiveFilterCount()} filter{getActiveFilterCount() > 1 ? 's' : ''} applied
-                  </ActiveFiltersText>
-                  <ClearFiltersButton onPress={() => setAppliedFilters({
-                    locations: [],
-                    serviceTypes: [],
-                    urgencies: [],
-                    dateRange: { start: null, end: null }
-                  })}>
-                    <ClearFiltersText>Clear all</ClearFiltersText>
-                  </ClearFiltersButton>
-                </ActiveFiltersContainer>
-              )}
+          {/* Show active filters summary */}
+          {getActiveFilterCount() > 0 && (
+            <ActiveFiltersContainer>
+              <ActiveFiltersText>
+                {getActiveFilterCount()} filter{getActiveFilterCount() > 1 ? 's' : ''} applied
+              </ActiveFiltersText>
+              <ClearFiltersButton onPress={clearCurrentFilters}>
+                <ClearFiltersText>Clear all</ClearFiltersText>
+              </ClearFiltersButton>
+            </ActiveFiltersContainer>
+          )}
 
-              {/* Loading State */}
-              {isLoading && (
-                <LoadingContainer>
-                  <ActivityIndicator size="large" color="#2B61A6" />
-                  <LoadingText>Loading listings...</LoadingText>
-                </LoadingContainer>
-              )}
+          {/* Loading State */}
+          {isLoading && (
+            <LoadingContainer>
+              <ActivityIndicator size="large" color="#2B61A6" />
+              <LoadingText>Loading listings...</LoadingText>
+            </LoadingContainer>
+          )}
 
-              {/* Error State */}
-              {error && (
-                <ErrorText>Error loading listings. Please try again.</ErrorText>
-              )}
+          {/* Error State */}
+          {error && (
+            <ErrorText>Error loading listings. Please try again.</ErrorText>
+          )}
 
-              {/* Map through real listings from Supabase */}
-              {!isLoading && listings && listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  onPress={() => router.navigate({
-                    pathname: '/(specific-listing)/sampleListing',
-                    params: {
-                      listingId: listing.id,
-                      category: listing.category,
-                      description: listing.description,
-                      address: listing.street_address,
-                      startTime: listing.start_time,
-                      duration: listing.duration,
-                      urgency: listing.urgency
-                    }
-                  })}
-                >
-                  <CardContent>
-                    <CardHeader>
-                      <CategoryBadge>
-                        <CategoryBadgeText>{listing.category}</CategoryBadgeText>
-                      </CategoryBadge>
-                      <CardActions>
-                        <ActionButton>
-                          <Heart size={20} color="#6B7280" />
-                        </ActionButton>
-                        <ActionButton>
-                          <MoveRight size={20} color="#6B7280" />
-                        </ActionButton>
-                      </CardActions>
-                    </CardHeader>
+          {/* Map through listings - same for both tabs*/}
+          {!isLoading && listings && listings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              onPress={() => router.navigate({
+                pathname: '/(specific-listing)/sampleListing',
+                params: {
+                  listingId: listing.id,
+                  category: listing.category,
+                  description: listing.description,
+                  address: listing.street_address,
+                  startTime: listing.start_time,
+                  duration: listing.duration,
+                  urgency: listing.urgency,
+                  status: listing.status
+                }
+              })}
+            >
+              <CardContent>
+                <CardHeader>
+                  <CategoryBadge>
+                    <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+                  </CategoryBadge>
+                  <CardActions>
+                    <ActionButton>
+                      <Heart size={20} color="#6B7280" />
+                    </ActionButton>
+                    <ActionButton>
+                      <MoveRight size={20} color="#6B7280" />
+                    </ActionButton>
+                  </CardActions>
+                </CardHeader>
+                
+                <CardBody>
+                  <ListingTitle>{listing.category}</ListingTitle>
+                  <ListingSubtitle numberOfLines={3}>
+                    {listing.description}
+                  </ListingSubtitle>
+                </CardBody>
+                
+                <CardFooter>
+                  <LocationRow>
+                    <MapPin size={16} color="#6B7280" />
+                    <ListingLocation numberOfLines={1}>
+                      {listing.street_address}
+                    </ListingLocation>
+                  </LocationRow>
+                  
+                  {/* Show different badges based on tab */}
+                  <FooterRow>
+                    {listing.urgency && (
+                      <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
+                        <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
+                          {listing.urgency} Priority
+                        </UrgencyText>
+                      </UrgencyBadge>
+                    )}
                     
-                    <CardBody>
-                      <ListingTitle>{listing.category}</ListingTitle>
-                      <ListingSubtitle numberOfLines={3}>
-                        {listing.description}
-                      </ListingSubtitle>
-                    </CardBody>
-                    
-                    <CardFooter>
-                      <LocationRow>
-                        <MapPin size={16} color="#6B7280" />
-                        <ListingLocation numberOfLines={1}>
-                          {listing.street_address}
-                        </ListingLocation>
-                      </LocationRow>
-                      {/* Show urgency badge if available */}
-                      {listing.urgency && (
-                        <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
-                          <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
-                            {listing.urgency} Priority
-                          </UrgencyText>
-                        </UrgencyBadge>
-                      )}
-                    </CardFooter>
-                  </CardContent>
-                </ListingCard>
-              ))}
+                    {/* Show completion badge for completed tab */}
+                    {activeTab === 'completed' && (
+                      <StatusBadge>
+                        <CheckCircle size={14} color="#16A34A" />
+                        <StatusText>Completed</StatusText>
+                      </StatusBadge>
+                    )}
+                  </FooterRow>
+                </CardFooter>
+              </CardContent>
+            </ListingCard>
+          ))}
 
-              {/* Empty State */}
-              {!isLoading && listings && listings.length === 0 && (
-                <EmptyText>
-                  {getActiveFilterCount() > 0 
-                    ? 'No listings match your filters. Try adjusting them.' 
-                    : 'No listings available yet.'}
-                </EmptyText>
-              )}
-            </>
-          ) : (
-            <>
-              <ResultsHeader>
-                <ResultsHeaderText>Matched Requests ({matchedRequests.length})</ResultsHeaderText>
-              </ResultsHeader>
-              {matchedRequests.map((request) => (
-                <ResultCard key={request.id}>
-                  <TopRow>
-                    <CSRLogoContainer>
-                      <CSRLogoText>{request.csrLogo}</CSRLogoText>
-                    </CSRLogoContainer>
-                    <ProfileImage
-                      source={{ uri: request.pinProfile }}
-                      resizeMode="cover"
-                    />
-                    <NameContainer>
-                      <PinName>{request.pinName}</PinName>
-                    </NameContainer>
-                  </TopRow>
-                  <CategoriesRow>
-                    <CategoryTag backgroundColor="#F3F4F6">
-                      <MapPin size={14} color="#374151" />
-                      <CategoryText color="#374151">{request.location}</CategoryText>
-                    </CategoryTag>
-                    <CategoryTag backgroundColor={getUrgencyColor(request.urgency)}>
-                      <AlertCircle size={14} color={getUrgencyTextColor(request.urgency)} />
-                      <CategoryText color={getUrgencyTextColor(request.urgency)}>
-                        {request.urgency}
-                      </CategoryText>
-                    </CategoryTag>
-                  </CategoriesRow>
-                  <ViewMatchButton>
-                    <ViewMatchButtonText>View Match</ViewMatchButtonText>
-                  </ViewMatchButton>
-                </ResultCard>
-              ))}
-            </>
+          {/* Empty State */}
+          {!isLoading && listings && listings.length === 0 && (
+            <EmptyText>
+              {getActiveFilterCount() > 0 
+                ? `No ${activeTab} listings match your filters. Try adjusting them.`
+                : `No ${activeTab} listings yet.`}
+            </EmptyText>
           )}
         </ScrollContainer>
 
@@ -303,12 +278,17 @@ const Home = () => {
         </CreateListingContainer>
       </SafeAreaViewContainer>
 
-      {/* Filter Bottom Sheet */}
+      {/* Filter Bottom Sheet - exclude status from filters passed to user */}
       <FilterBottomSheet
         visible={filterVisible}
         onClose={() => setFilterVisible(false)}
         onApply={handleApplyFilters}
-        currentFilters={appliedFilters}
+        currentFilters={{
+          locations: currentFilters.locations,
+          serviceTypes: currentFilters.serviceTypes,
+          urgencies: currentFilters.urgencies,
+          dateRange: currentFilters.dateRange
+        }}
       />
     </>
   );
@@ -687,4 +667,26 @@ const EmptyText = styled.Text`
   color: #6B7280;
   text-align: center;
   padding: 40px 20px;
+`;
+
+const FooterRow = styled.View`
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const StatusBadge = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  background-color: #DCFCE7;
+  padding: 6px 12px;
+  border-radius: 16px;
+`;
+
+const StatusText = styled.Text`
+  font-size: 12px;
+  font-weight: 600;
+  color: #16A34A;
 `;
