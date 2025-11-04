@@ -8,7 +8,6 @@ import { exportAnalyticsJSON, exportToCSV, exportToText } from '../../services/e
 import { getAllListings } from '../../services/listings';
 
 const Analytics = () => {
-  const [dateRange, setDateRange] = useState<'week' | 'month' | 'year'>('month');
   const [isExporting, setIsExporting] = useState(false);
 
   // Fetch completed listings
@@ -35,7 +34,7 @@ const Analytics = () => {
     .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
 
   const totalHours = completedListings?.reduce((sum, listing) => 
-    sum + (parseInt(listing.duration as any) || 0), 0
+    sum + (parseInt(listing.duration as string) || 0), 0
   ) || 0;
 
   const locationCounts = completedListings?.reduce((acc, listing) => {
