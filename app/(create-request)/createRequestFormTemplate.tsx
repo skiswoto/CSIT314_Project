@@ -14,6 +14,7 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
     const {
         description,
         category,
+        urgency,
         date,
         time,
         duration,
@@ -33,6 +34,7 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                 const { error } = await supabase.rpc('insert_listing', {
                     description: description,
                     category: category,
+                    urgency: urgency,
                     listing_date: date,
                     start_time: time,
                     duration: duration,

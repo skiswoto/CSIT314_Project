@@ -7,10 +7,12 @@ import { StyleSheet, TextInput } from "react-native";
 import { styled } from "styled-components/native";
 import CreateRequestFormTemplate from "../createRequestFormTemplate";
 
+const URGENCIES = ['Low', 'Medium', 'High'] as const;
+
 
 const Step1 = () => {
     const [showCategorySelection, setShowCategorySelection] = useState<boolean>(false)
-    const { description, category, setDescription, setCategory } = useCreateListingStore()
+    const { description, category, urgency, setDescription, setCategory, setUrgency } = useCreateListingStore()
 
     const handleSelectedCategory = () => [
         setShowCategorySelection(false)
@@ -55,6 +57,26 @@ const Step1 = () => {
                         </Picker>
                     </>
                 }
+
+                {/* Urgency Selection */}
+                <UrgencySection>
+                    <SectionHeader>
+                        <SectionTitle>Urgency</SectionTitle>
+                    </SectionHeader>
+                    <OptionsContainer>
+                        {URGENCIES.map(urgencyOption => (
+                            <OptionButton
+                                key={urgencyOption}
+                                isSelected={urgency === urgencyOption}
+                                onPress={() => setUrgency(urgencyOption)}
+                            >
+                                <OptionText isSelected={urgency === urgencyOption}>
+                                    {urgencyOption}
+                                </OptionText>
+                            </OptionButton>
+                        ))}
+                    </OptionsContainer>
+                </UrgencySection>
             </>
         </CreateRequestFormTemplate>
     )
@@ -86,4 +108,38 @@ const PickerButton = styled.Pressable`
 `
 const PickerButtonText = styled.Text`
     color: #ffffff;
+`
+const UrgencySection = styled.View`
+    margin-top: 10px;
+    padding-horizontal: 0px;
+`
+
+const SectionHeader = styled.View`
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-left: 2px;
+`
+
+const OptionsContainer = styled.View`
+    flex-direction: row;
+    gap: 12px;
+`
+
+const OptionButton = styled.Pressable<{ isSelected: boolean }>`
+    flex: 1;
+    padding-vertical: 12px;
+    padding-horizontal: 16px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: ${props => props.isSelected ? '#111827' : '#d1d5db'};
+    background-color: ${props => props.isSelected ? '#111827' : '#ffffff'};
+    align-items: center;
+`
+
+const OptionText = styled.Text<{ isSelected: boolean }>`
+    color: ${props => props.isSelected ? '#ffffff' : '#111827'};
+    font-size: 14px;
+    font-weight: 500;
 `
