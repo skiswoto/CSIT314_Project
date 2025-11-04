@@ -1,16 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, Calendar, Clock, Heart, MapPin } from 'lucide-react-native'
-import { Image, ImageBackground, StyleSheet, View } from 'react-native'
+import { ArrowLeft, Calendar, CheckCircle, Clock, Download, Heart, MapPin, TrendingUp } from 'lucide-react-native'
+import { Alert, Image, ImageBackground, ScrollView, StyleSheet } from 'react-native'
 import { styled } from 'styled-components/native'
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles'
 
 const SampleListing = () => {
     const router = useRouter()
-    
-    // STEP 1: Receive the params passed from home.tsx
     const params = useLocalSearchParams()
     
-    // STEP 2: Extract the data (all params come as strings)
     const {
         listingId,
         category,
@@ -22,10 +19,10 @@ const SampleListing = () => {
         status
     } = params
     
-    // Log to see what we received
+    const isCompleted = status === 'completed'
+    
     console.log('Listing Detail Params:', params)
     
-    // Helper function to get urgency color
     const getUrgencyColor = (urgency: string | string[] | undefined) => {
         if (!urgency) return '#F3F4F6';
         const urgencyStr = Array.isArray(urgency) ? urgency[0] : urgency;
@@ -48,11 +45,9 @@ const SampleListing = () => {
         }
     }
 
-    // Format time (startTime comes as "14:00:00")
     const formatTime = (time: string | string[] | undefined) => {
         if (!time) return 'Not specified';
         const timeStr = Array.isArray(time) ? time[0] : time;
-        // Convert "14:00:00" to "2:00 PM"
         const [hours, minutes] = timeStr.split(':');
         const hour = parseInt(hours);
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -60,13 +55,38 @@ const SampleListing = () => {
         return `${displayHour}:${minutes} ${ampm}`;
     }
 
+    const handleExportData = async () => {
+        // Create CSV-like data
+        const data = `
+Service Report
+--------------
+Category: ${category}
+Description: ${description}
+Address: ${address}
+Start Time: ${formatTime(startTime)}
+Duration: ${duration} hours
+Urgency: ${urgency}
+Status: ${status}
+        `.trim();
+
+        Alert.alert('Export Data', data, [
+            { text: 'OK' }
+        ]);
+
+        // Optional: Use expo-sharing to share the data
+        // You'd need to create a file first using expo-file-system
+    }
+
     return (
         <SafeAreaViewContainer>
-            <View style={{ flex: 1 }}>   
+            <ScrollView 
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                showsVerticalScrollIndicator={false}
+            >   
                 <ImageBackground
                     style={styles.backgroundImage}
                     resizeMode='cover'
-                    // Placeholder image - to be changed later on
                     source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800' }}
                 >
                     <TopBar>
@@ -80,7 +100,6 @@ const SampleListing = () => {
                 </ImageBackground>
 
                 <Card>
-                    {/* STEP 3: Display category and urgency badges */}
                     <CategoryRow>
                         <Category backgroundColor="#DBEAFE">
                             <CategoryText color="#1E40AF">
@@ -97,54 +116,103 @@ const SampleListing = () => {
                         )}
                         
                         {status && (
-                            <Category backgroundColor={status === 'completed' ? '#DCFCE7' : '#F3F4F6'}>
-                                <CategoryText color={status === 'completed' ? '#16A34A' : '#6B7280'}>
+                            <Category backgroundColor={isCompleted ? '#DCFCE7' : '#F3F4F6'}>
+                                <CategoryText color={isCompleted ? '#16A34A' : '#6B7280'}>
                                     {Array.isArray(status) ? status[0] : status}
                                 </CategoryText>
                             </Category>
                         )}
                     </CategoryRow>
 
-                    {/* Display the category as title */}
                     <ListingTitle>
                         {category || 'Service Request'}
                     </ListingTitle>
 
-                    {/* Display the description */}
                     <ListingDescription>
                         {description || 'No description provided.'}
                     </ListingDescription>
 
-                    {/* Additional details section */}
-                    <DetailsSection>
-                        {/* Address */}
-                        {address && (
-                            <DetailRow>
-                                <MapPin size={18} color="#6B7280" />
-                                <DetailText>{Array.isArray(address) ? address[0] : address}</DetailText>
-                            </DetailRow>
-                        )}
+                    {/* INSIGHTS SECTION FOR COMPLETED LISTINGS */}
+                    {isCompleted && (
+                        <InsightsSection>
+                            <SectionHeader>
+                                <TrendingUp size={20} color="#111827" />
+                                <SectionTitle>Service Insights</SectionTitle>
+                            </SectionHeader>
+                            
+                            <InsightsGrid>
+                                <InsightCard>
+                                    <InsightIcon>
+                                        <CheckCircle size={24} color="#16A34A" />
+                                    </InsightIcon>
+                                    <InsightLabel>Status</InsightLabel>
+                                    <InsightValue>Completed</InsightValue>
+                                </InsightCard>
 
-                        {/* Start time */}
-                        {startTime && (
-                            <DetailRow>
-                                <Clock size={18} color="#6B7280" />
-                                <DetailText>Starts at {formatTime(startTime)}</DetailText>
-                            </DetailRow>
-                        )}
+                                <InsightCard>
+                                    <InsightIcon>
+                                        <Clock size={24} color="#2563EB" />
+                                    </InsightIcon>
+                                    <InsightLabel>Duration</InsightLabel>
+                                    <InsightValue>
+                                        {duration ? `${Array.isArray(duration) ? duration[0] : duration} hrs` : 'N/A'}
+                                    </InsightValue>
+                                </InsightCard>
 
-                        {/* Duration */}
-                        {duration && (
-                            <DetailRow>
-                                <Calendar size={18} color="#6B7280" />
-                                <DetailText>
-                                    Duration: {Array.isArray(duration) ? duration[0] : duration} hour(s)
-                                </DetailText>
-                            </DetailRow>
-                        )}
-                    </DetailsSection>
+                                <InsightCard>
+                                    <InsightIcon>
+                                        <Calendar size={24} color="#7C3AED" />
+                                    </InsightIcon>
+                                    <InsightLabel>Start Time</InsightLabel>
+                                    <InsightValue>{formatTime(startTime)}</InsightValue>
+                                </InsightCard>
 
-                    {/* Profile and Chat button row */}
+                                <InsightCard>
+                                    <InsightIcon>
+                                        <MapPin size={24} color="#DC2626" />
+                                    </InsightIcon>
+                                    <InsightLabel>Location</InsightLabel>
+                                    <InsightValue numberOfLines={2}>
+                                        {address ? (Array.isArray(address) ? address[0] : address).split(',')[0] : 'N/A'}
+                                    </InsightValue>
+                                </InsightCard>
+                            </InsightsGrid>
+
+                            <ExportButton onPress={handleExportData}>
+                                <Download size={20} color="#ffffff" />
+                                <ExportButtonText>Export Service Data</ExportButtonText>
+                            </ExportButton>
+                        </InsightsSection>
+                    )}
+
+                    {/* REGULAR DETAILS SECTION FOR AVAILABLE LISTINGS */}
+                    {!isCompleted && (
+                        <DetailsSection>
+                            {address && (
+                                <DetailRow>
+                                    <MapPin size={18} color="#6B7280" />
+                                    <DetailText>{Array.isArray(address) ? address[0] : address}</DetailText>
+                                </DetailRow>
+                            )}
+
+                            {startTime && (
+                                <DetailRow>
+                                    <Clock size={18} color="#6B7280" />
+                                    <DetailText>Starts at {formatTime(startTime)}</DetailText>
+                                </DetailRow>
+                            )}
+
+                            {duration && (
+                                <DetailRow>
+                                    <Calendar size={18} color="#6B7280" />
+                                    <DetailText>
+                                        Duration: {Array.isArray(duration) ? duration[0] : duration} hour(s)
+                                    </DetailText>
+                                </DetailRow>
+                            )}
+                        </DetailsSection>
+                    )}
+
                     <Row>
                         <Image 
                             source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }} 
@@ -156,14 +224,13 @@ const SampleListing = () => {
                         </ChatButton>
                     </Row>
 
-                    {/* Apply button */}
-                    <ApplyButton>
+                    <ApplyButton disabled={isCompleted}>
                         <ApplyButtonText>
-                            {status === 'completed' ? 'View Details' : 'Save Listing'}
+                            {isCompleted ? 'Service Completed' : 'Apply now'}
                         </ApplyButtonText>
                     </ApplyButton>
                 </Card>
-            </View>
+            </ScrollView>
         </SafeAreaViewContainer>
     )
 }
@@ -173,7 +240,7 @@ export default SampleListing
 const styles = StyleSheet.create({
     backgroundImage: {
         width: '100%',
-        height: 500,
+        height: 400,
     },
     profileImage: {
         width: 50,
@@ -184,15 +251,12 @@ const styles = StyleSheet.create({
 
 const Card = styled.View`
     background-color: #ffffff;
-    height: 46%;
     width: 100%;
-    position: absolute;
-    bottom: 0px;
     border-top-left-radius: 40px;
     border-top-right-radius: 40px;
-    overflow: hidden;
     padding-horizontal: 20px;
     padding-vertical: 20px;
+    margin-top: -40px;
 `
 
 const ApplyButton = styled.TouchableOpacity`
@@ -263,24 +327,6 @@ const ListingDescription = styled.Text`
     line-height: 22px;
 `
 
-const DetailsSection = styled.View`
-    margin-bottom: 20px;
-    gap: 12px;
-`
-
-const DetailRow = styled.View`
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-`
-
-const DetailText = styled.Text`
-    font-size: 14px;
-    color: #6B7280;
-    font-weight: 500;
-    flex: 1;
-`
-
 const TopBar = styled.View`
     flex-direction: row;
     justify-content: space-between;
@@ -302,4 +348,94 @@ const Row = styled.View`
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+`
+
+const InsightsSection = styled.View`
+    background-color: #F9FAFB;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+`
+
+const SectionHeader = styled.View`
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+`
+
+const SectionTitle = styled.Text`
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+`
+
+const InsightsGrid = styled.View`
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+`
+
+const InsightCard = styled.View`
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    padding: 16px;
+    width: 48%;
+    border-width: 1px;
+    border-color: #E5E7EB;
+    align-items: center;
+`
+
+const InsightIcon = styled.View`
+    margin-bottom: 8px;
+`
+
+const InsightLabel = styled.Text`
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 500;
+    margin-bottom: 4px;
+    text-align: center;
+`
+
+const InsightValue = styled.Text`
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+`
+
+const ExportButton = styled.TouchableOpacity`
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #2563EB;
+    padding: 14px;
+    border-radius: 12px;
+`
+
+const ExportButtonText = styled.Text`
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+`
+
+const DetailsSection = styled.View`
+    margin-bottom: 20px;
+    gap: 12px;
+`
+
+const DetailRow = styled.View`
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+`
+
+const DetailText = styled.Text`
+    font-size: 14px;
+    color: #6B7280;
+    font-weight: 500;
+    flex: 1;
 `
