@@ -8,7 +8,7 @@ export interface Listing {
   category: string;
   listing_date: string;
   start_time: string;
-  duration: number;
+  duration: string;
   street_address: string;
   unit_level: string;
   building_name: string;

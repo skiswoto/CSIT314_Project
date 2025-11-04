@@ -1,27 +1,22 @@
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 import { Listing } from './listings';
 
-/**
- * Export listings to a formatted text file
- */
 export const exportToText = async (listings: Listing[]) => {
   try {
     const report = generateTextReport(listings);
     const fileName = `service_report_${getDateStamp()}.txt`;
-    const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-
-    // Write file
-    await FileSystem.writeAsStringAsync(fileUri, report, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    
+    // Create file using modern API
+    const file = new File(Paths.document, fileName);
+    await file.write(report);
 
     // Check if sharing is available
     const isSharingAvailable = await Sharing.isAvailableAsync();
     
     if (isSharingAvailable) {
-      await Sharing.shareAsync(fileUri, {
+      await Sharing.shareAsync(file.uri, {
         mimeType: 'text/plain',
         dialogTitle: 'Export Service Report',
         UTI: 'public.plain-text',
@@ -34,7 +29,7 @@ export const exportToText = async (listings: Listing[]) => {
       );
     }
 
-    return { success: true, fileUri };
+    return { success: true, fileUri: file.uri };
   } catch (error) {
     console.error('Export to text failed:', error);
     Alert.alert('Export Failed', 'Unable to export report. Please try again.');
@@ -49,18 +44,16 @@ export const exportToCSV = async (listings: Listing[]) => {
   try {
     const csv = generateCSV(listings);
     const fileName = `service_export_${getDateStamp()}.csv`;
-    const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-
-    // Write CSV file
-    await FileSystem.writeAsStringAsync(fileUri, csv, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    
+    // Create file using modern API
+    const file = new File(Paths.document, fileName);
+    await file.write(csv);
 
     // Check if sharing is available
     const isSharingAvailable = await Sharing.isAvailableAsync();
     
     if (isSharingAvailable) {
-      await Sharing.shareAsync(fileUri, {
+      await Sharing.shareAsync(file.uri, {
         mimeType: 'text/csv',
         dialogTitle: 'Export CSV Data',
         UTI: 'public.comma-separated-values-text',
@@ -73,7 +66,7 @@ export const exportToCSV = async (listings: Listing[]) => {
       );
     }
 
-    return { success: true, fileUri };
+    return { success: true, fileUri: file.uri };
   } catch (error) {
     console.error('Export to CSV failed:', error);
     Alert.alert('Export Failed', 'Unable to export CSV. Please try again.');
@@ -119,18 +112,16 @@ export const exportAnalyticsJSON = async (
     };
 
     const fileName = `analytics_export_${getDateStamp()}.json`;
-    const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+    
 
-    await FileSystem.writeAsStringAsync(
-      fileUri, 
-      JSON.stringify(jsonData, null, 2),
-      { encoding: FileSystem.EncodingType.UTF8 }
-    );
+    // Create file
+    const file = new File(Paths.document, fileName);
+    await file.write(JSON.stringify(jsonData, null, 2));
 
     const isSharingAvailable = await Sharing.isAvailableAsync();
     
     if (isSharingAvailable) {
-      await Sharing.shareAsync(fileUri, {
+      await Sharing.shareAsync(file.uri, {
         mimeType: 'application/json',
         dialogTitle: 'Export Analytics Data',
       });
@@ -142,7 +133,7 @@ export const exportAnalyticsJSON = async (
       );
     }
 
-    return { success: true, fileUri };
+    return { success: true, fileUri: file.uri };
   } catch (error) {
     console.error('Export JSON failed:', error);
     Alert.alert('Export Failed', 'Unable to export JSON. Please try again.');
@@ -265,9 +256,9 @@ const getDateStamp = (): string => {
  */
 export const deleteExportFile = async (fileUri: string) => {
   try {
-    const fileInfo = await FileSystem.getInfoAsync(fileUri);
-    if (fileInfo.exists) {
-      await FileSystem.deleteAsync(fileUri);
+    const file = new File(fileUri);
+    if (file.exists) {
+      await file.delete();
       return { success: true };
     }
     return { success: false, error: 'File not found' };
