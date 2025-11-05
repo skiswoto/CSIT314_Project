@@ -3,7 +3,6 @@ import { Link } from 'expo-router';
 import { styled } from 'styled-components/native';
 import { H1, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 
-
 const Profile = () => {
     const user = userAuthStore(s => s.user)
     const userName = user?.user_metadata.name
@@ -21,6 +20,11 @@ const Profile = () => {
                         <LoginButton>
                             <LoginButtonText>Log in or sign up</LoginButtonText>
                         </LoginButton>
+                    </Link>
+                    <Link href="../(report)/generateReport" asChild>
+                        <ViewStatsButton>
+                            <ViewStatsButtonText>View Stats as (PM)</ViewStatsButtonText>
+                        </ViewStatsButton>
                     </Link>
                 </ScrollContainer>
             </SafeAreaViewContainer>
@@ -44,4 +48,11 @@ const LoginButtonText = styled.Text`
     font-size: 18px;
     padding-vertical: 16px;
     align-self: center;
+`
+const ViewStatsButton = styled(LoginButton)`
+    background-color: #D0D0D0;
+    width: 55%;
+`
+const ViewStatsButtonText = styled(LoginButtonText)`
+    color: #000000;
 `
