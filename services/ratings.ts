@@ -1,13 +1,13 @@
-import { supabase } from '../supabase';
+import { supabase } from '../libs/supabase';
 
 export interface ServiceRating {
-    id?: string;
-    request_id: number;
-    pin_user_id: string;
-    volunteer_name: string;
-    rating: number;
-    comment?: string;
-    created_at?: string;
+  id?: number;
+  listing_id: number; 
+  rater_id: string; 
+  rater_email: string; 
+  volunteer_name: string;
+  rating: number;
+  created_at?: string;
 }
 
 // Submit a new service rating
@@ -17,11 +17,11 @@ export const submitRating = async (ratingData: ServiceRating) => {
             .from('service_ratings')
             .insert([
                 {
-                    request_id: ratingData.request_id,
-                    pin_user_id: ratingData.pin_user_id,
+                    listing_id: ratingData.listing_id,
+                    rater_id: ratingData.rater_id,
+                    rater_email: ratingData.rater_email,
                     volunteer_name: ratingData.volunteer_name,
                     rating: ratingData.rating,
-                    comment: ratingData.comment || null,
                 }
             ])
             .select()
@@ -43,7 +43,7 @@ export const getRatingByRequestId = async (requestId: number, userId: string) =>
             .from('service_ratings')
             .select('*')
             .eq('request_id', requestId)
-            .eq('pin_user_id', userId)
+            .eq('rater_id', userId)
             .single();
 
         if (error && error.code !== 'PGRST116') {

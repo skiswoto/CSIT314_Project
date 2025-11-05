@@ -1,8 +1,15 @@
-import { create } from 'zustand'
-
+import { create } from 'zustand';
 
 type Category = 'medical' | 'transport' | 'household' | 'groceries' | 'emotional'
 type Urgency = 'High' | 'Medium' | 'Low'
+
+export type UploadedDocument = {
+    uri: string
+    name: string
+    type: string
+    size?: number
+    url?: string
+}
 
 type State = {
     currentStep: number
@@ -16,6 +23,7 @@ type State = {
     unitLevel: string
     buildingName: string
     postCode: string
+    supportingDocuments: UploadedDocument[]
 }
 
 type Action = {
@@ -32,6 +40,7 @@ type Action = {
     setUnitLevel: (text: string) => void
     setBuildingName: (text: string) => void
     setPostCode: (text: string) => void
+    setSupportingDocuments: (docs: UploadedDocument[]) => void
     cancelProgress: () => void
 }
 
@@ -47,12 +56,13 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     unitLevel: '',
     buildingName: '',
     postCode: '',
+    supportingDocuments: [],
     nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
     previousStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
     setStep: (index: number) => set(() => ({ currentStep: Math.max(index, 0) })),
     setDescription: (text) => set(() => ({ description: text })),
     setCategory: (category) => set(() => ({ category })),
-    setUrgency: (urgency) => set(() => ({ urgency })), // Add this line
+    setUrgency: (urgency) => set(() => ({ urgency })), 
     setDate: (date: Date) => set(() => ({ date: date})),
     setTime: (time: Date) => set(() => ({ time: time})),
     setDuration: (duration: Date) => set(() => ({ duration: duration})),
@@ -60,6 +70,7 @@ export const useCreateListingStore = create<State & Action>((set) => ({
     setUnitLevel: (text: string) => set(() => ({ unitLevel: text})),
     setBuildingName: (text: string) => set(() => ({ buildingName: text})),
     setPostCode: (text: string) => set(() => ({ postCode: text})),
+    setSupportingDocuments: (docs: UploadedDocument[]) => set(() => ({ supportingDocuments: docs })),
     cancelProgress: () => set((state) => ({
         currentStep: 0,
         description: '',
@@ -72,5 +83,6 @@ export const useCreateListingStore = create<State & Action>((set) => ({
         unitLevel: '',
         buildingName: '',
         postCode: '',
+        supportingDocuments: [],
     }))
 }))

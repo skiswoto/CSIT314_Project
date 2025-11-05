@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
-import { getRatingByRequestId } from '../../libs/(api)/ratings';
 import { supabase } from '../../libs/supabase';
+import { getRatingByRequestId } from '../../services/ratings';
 
 // Define the request type
 interface Request {
