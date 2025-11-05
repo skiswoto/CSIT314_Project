@@ -28,11 +28,12 @@ const GenerateReport = () => {
         return acc;
     }, {} as Record<string, number>) || {};
 
-    // const urgencyCounts = allListings?.reduce((acc, listing) => {
-    //     acc[listing.urgency] = (acc[listing.urgency] || 0) + 1;
-    //     return acc;
-    // }, {} as Record<string, number>) || {};
-        
+    const urgencyCounts = allListings?.reduce((acc, listing) => {
+        acc[listing.urgency as string] = (acc[listing.urgency as string] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>) || {};
+
+    const UrgencyData = Object.values(urgencyCounts).map(value => ({ value }));
 
     useEffect(() => {
         const FetchData = async() => {
@@ -89,8 +90,6 @@ const GenerateReport = () => {
         }
         FetchData()
     }, [range])
-
-    const UrgencyData = [ {value: 50}, {value: 80}, {value: 90} ]
 
     return (
         <SafeAreaViewContainer>
@@ -156,12 +155,13 @@ const GenerateReport = () => {
                 <GraphContainer>
                     <GraphTitle>Listings by Urgency</GraphTitle>
                     <BarChart 
-                        data={UrgencyData} 
+                        data={UrgencyData}
+                        frontColor={"#1861F0"} 
                         barBorderTopLeftRadius={8}
                         barBorderTopRightRadius={8}
                         spacing={30}
                         xAxisLabelTextStyle={{
-                            color: '#6B7280',
+                            color: '#000000',
                             fontSize: 12,
                             fontWeight: '500'
                         }}
@@ -170,6 +170,8 @@ const GenerateReport = () => {
                         disableScroll
                         xAxisLabelTexts={['High', 'Medium', 'Low']}
                         xAxisLength={300}
+                        showValuesAsTopLabel={true}
+                        maxValue={100}
                     />
                 </GraphContainer>
                 <ServicesContainer>
@@ -264,14 +266,14 @@ const GraphContainer = styled.View`
     width: 100%;
     height: 300px;
     border-radius: 14px;
-    margin-vertical: 10px;
+    margin-top: 10px;
     padding-horizontal: 10px;
 `
 const ServicesContainer = styled.View`
     background-color: #D0D0D0;
     align-self: center;
     width: 100%;
-    height: 570;
+    height: 570px;
     border-radius: 14px;
     margin-vertical: 10px;
     padding-horizontal: 10px;
@@ -294,7 +296,7 @@ const BarContainer = styled.View`
 const BarFill = styled.View<{ width: string }>`
     height: 100%;
     width: ${props => props.width};   
-    background-color: #2563EB;
+    background-color: #1861F0;
     justify-content: center;
     padding-horizontal: 12px;
 `;
