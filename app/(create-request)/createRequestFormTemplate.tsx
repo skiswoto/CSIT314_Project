@@ -21,16 +21,57 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         streetAddress,
         unitLevel,
         buildingName,
-        postCode
+        postCode,
+        supportingDocuments
     } = useCreateListingStore()
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore()
     const router = useRouter()
-    const stepsArray = (['/(create-request)/(steps)/step1', '/(create-request)/(steps)/step2', '/(create-request)/(steps)/step3'] as const)
+    const stepsArray = ([
+        '/(create-request)/(steps)/step1', 
+        '/(create-request)/(steps)/step2', 
+        '/(create-request)/(steps)/step3',
+        '/(create-request)/(steps)/step4'
+    ] as const)
 
     const handleNextStep = async () => {
         const lastIndex = stepsArray.length - 1
+
+        
         if (currentStep >= lastIndex) {
             try {
+
+                let documentUrls: string[] = []
+                
+                if (supportingDocuments && supportingDocuments.length > 0) {
+                    for (const doc of supportingDocuments) {
+                        const fileName = `${Date.now()}_${doc.name}`
+                        const filePath = `listing-documents/${fileName}`
+                        
+                        const response = await fetch(doc.uri)
+                        const blob = await response.blob()
+                        
+                        const { data: uploadData, error: uploadError } = await supabase
+                            .storage
+                            .from('documents')
+                            .upload(filePath, blob, {
+                                contentType: doc.type,
+                                cacheControl: '3600',
+                            })
+                        
+                        if (uploadError) {
+                            console.error('Upload error:', uploadError)
+                            throw uploadError
+                        }
+                        
+                        const { data: { publicUrl } } = supabase
+                            .storage
+                            .from('documents')
+                            .getPublicUrl(filePath)
+                        
+                        documentUrls.push(publicUrl)
+                    }
+                }
+                
                 const { error } = await supabase.rpc('insert_listing', {
                     description: description,
                     category: category,
@@ -41,14 +82,18 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                     street_address: streetAddress,
                     unit_level: unitLevel,
                     building_name: buildingName,
-                    post_code: postCode
+                    post_code: postCode,
+                    supporting_documents: documentUrls.length > 0 ? documentUrls : null  // Add this
                 })
+                
+                if (error) throw error
+                
                 router.push('/(tabs)/home')
                 cancelProgress()
-                if (error) throw error
             } catch (e) {
                 console.error(e)
             }
+            return
         }
         const nextIndex = Math.min(currentStep + 1, lastIndex)
         nextStep()
