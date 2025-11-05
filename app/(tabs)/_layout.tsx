@@ -51,7 +51,7 @@ const TabLayout = (): React.ReactElement => {
                     headerShown: false, 
                     tabBarIcon: () => <User />
                 }}
-            />
+            /> 
         </Tabs>
     )
 =======

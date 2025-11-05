@@ -14,6 +14,7 @@ const Profile = () => {
   const userRole = user?.user_metadata.role;
   const router = useRouter();
 
+<<<<<<< HEAD
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -23,6 +24,32 @@ const Profile = () => {
       console.error('Error logging out:', error);
     }
   };
+=======
+    return (
+        <>
+            <SafeAreaViewContainer>
+                <ScrollContainer>
+                    {user ? 
+                        <H1>Hi {userName}!</H1> 
+                        : 
+                        <H1>profile</H1>
+                    }
+                    <Link href="../(user-auth)/signUp" asChild>
+                        <LoginButton>
+                            <LoginButtonText>Log in or sign up</LoginButtonText>
+                        </LoginButton>
+                    </Link>
+                    <Link href="../(report)/generateReport" asChild>
+                        <ViewStatsButton>
+                            <ViewStatsButtonText>View Stats as (PM)</ViewStatsButtonText>
+                        </ViewStatsButton>
+                    </Link>
+                </ScrollContainer>
+            </SafeAreaViewContainer>
+        </>
+    )
+}
+>>>>>>> origin/dev
 
   const handleLogin = () => router.push('/(user-auth)/signUp');
 
@@ -234,6 +261,7 @@ const LogoutButtonText = styled.Text`
 `;
 
 const LoginButtonText = styled.Text`
+<<<<<<< HEAD
   color: #ffffff;
   font-size: 18px;
   font-weight: 600;
@@ -241,3 +269,18 @@ const LoginButtonText = styled.Text`
 `;
 
 export default Profile;
+=======
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 18px;
+    padding-vertical: 16px;
+    align-self: center;
+`
+const ViewStatsButton = styled(LoginButton)`
+    background-color: #D0D0D0;
+    width: 55%;
+`
+const ViewStatsButtonText = styled(LoginButtonText)`
+    color: #000000;
+`
+>>>>>>> origin/dev
