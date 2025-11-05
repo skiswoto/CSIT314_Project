@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react'
 import { Dimensions, Pressable } from 'react-native'
 import { BarChart } from "react-native-gifted-charts"
 import { styled } from 'styled-components/native'
+import { Listing } from '../../services/listings'
+
 
 const SCREEN_WIDTH = Dimensions.get("screen").width
 
@@ -14,29 +16,69 @@ const GenerateReport = () => {
     const router = useRouter()
     const [range, setRange] = useState<number>(0)
     const [newListingStats, setNewListingStats] = useState<number>(0)
-    
+    const [newSignUpStats, setNewSignUpStats] = useState<number>(0)
+    const [completedListings, setCompletedListings] = useState<number>(0)
+
+    const [allListings, setAllListings] = useState<Listing[]>([])
+
+    const totalListings = allListings?.length || 0
+
+    const categoryCounts = allListings?.reduce((acc, listing) => {
+        acc[listing.category] = (acc[listing.category] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>) || {};
+
+    // const urgencyCounts = allListings?.reduce((acc, listing) => {
+    //     acc[listing.urgency] = (acc[listing.urgency] || 0) + 1;
+    //     return acc;
+    // }, {} as Record<string, number>) || {};
+        
+
     useEffect(() => {
         const FetchData = async() => {
             try {
                 switch (range) {
                     case 0: 
-                        const { data: NumofNewDailyListings, error: DailyListingsErr } = await supabase.rpc('grab_num_of_new_listings')
-                        if (DailyListingsErr) throw DailyListingsErr
-                        if (NumofNewDailyListings) setNewListingStats(NumofNewDailyListings)
+                        const { data: DailyNewListings, error: DailyListingsErr } = await supabase.rpc('grab_num_of_new_listings', { range: '24h' })
+                        const { data: DailyNewSignUps, error: DailySignUpsErr } = await supabase.rpc('grab_num_of_new_signups', { range: '24h' })
+                        const { data: DailyCompletedListings, error: DailyCompletedListingsError } = await supabase.rpc('grab_num_of_completed_listings', { range: '24h' })
+                        const { data: DailyAllListings, error: DailyAllListingsErr } = await supabase.rpc('grab_all_listings_dynamic', { range: '24h' })
+
+                        if (DailyListingsErr || DailySignUpsErr || DailyCompletedListingsError || DailyAllListingsErr) throw {DailyListingsErr, DailySignUpsErr, DailyCompletedListingsError, DailyAllListingsErr}
+
+                        if (DailyNewListings !== null) setNewListingStats(DailyNewListings)
+                        if (DailyNewSignUps !== null) setNewSignUpStats(DailyNewSignUps)
+                        if (DailyCompletedListings !== null) setCompletedListings(DailyCompletedListings)
+                        if (DailyAllListings !== null) setAllListings(DailyAllListings) 
+
                         break
                     case 1: 
-                        const { data: NumofNewWeeklyListings, error: WeeklyListingsErr } = await supabase.rpc('grab_num_of_new_listings', {
-                            time_range: '7d'
-                        })
-                        if (WeeklyListingsErr) throw WeeklyListingsErr
-                        if (NumofNewWeeklyListings) setNewListingStats(NumofNewWeeklyListings)
+                        const { data: WeeklyNewListings, error: WeeklyListingsErr } = await supabase.rpc('grab_num_of_new_listings', { range: '7d' })
+                        const { data: WeeklyNewSignUps, error: WeeklySignUpsErr } = await supabase.rpc('grab_num_of_new_signups', { range: '7d' })
+                        const { data: WeeklyCompletedListings, error: WeeklyCompletedListingsError } = await supabase.rpc('grab_num_of_completed_listings', { range: '7d' })
+                        const { data: WeeklyAllListings, error: WeeklyAllListingsErr } = await supabase.rpc('grab_all_listings_dynamic', { range: '7d' })
+
+                        if (WeeklyListingsErr || WeeklySignUpsErr || WeeklyCompletedListingsError || WeeklyAllListingsErr) throw {WeeklyListingsErr, WeeklySignUpsErr, WeeklyCompletedListingsError, WeeklyAllListingsErr}
+                        
+                        if (WeeklyNewListings !== null) setNewListingStats(WeeklyNewListings)
+                        if (WeeklyNewSignUps !== null) setNewSignUpStats(WeeklyNewSignUps)
+                        if (WeeklyCompletedListings !== null) setCompletedListings(WeeklyCompletedListings)
+                        if (WeeklyAllListings !== null) setAllListings(WeeklyAllListings) 
+
                         break
                     case 2: 
-                        const { data: NumofNewMonthlyListings, error: MonthlyListingsErr } = await supabase.rpc('grab_num_of_new_listings', {
-                            time_range: '30d'
-                        })
-                        if (MonthlyListingsErr) throw MonthlyListingsErr
-                        if (NumofNewMonthlyListings) setNewListingStats(NumofNewMonthlyListings)
+                        const { data: MonthlyNewListings, error: MonthlyListingsErr } = await supabase.rpc('grab_num_of_new_listings', { range: '30d' })
+                        const { data: MonthlyNewSignUps, error: MonthlySignUpsErr } = await supabase.rpc('grab_num_of_new_signups', { range: '30d' })
+                        const { data: MonthlyCompletedListings, error: MonthlyCompletedListingsError } = await supabase.rpc('grab_num_of_completed_listings', { range: '30d' })
+                        const { data: MonthlyAllListings, error: MonthlyAllListingsErr } = await supabase.rpc('grab_all_listings_dynamic', { range: '30d' })
+
+                        if (MonthlySignUpsErr || MonthlyListingsErr || MonthlyCompletedListingsError || MonthlyAllListingsErr) throw {MonthlySignUpsErr, MonthlyListingsErr, MonthlyAllListingsErr, MonthlyCompletedListingsError}
+
+                        if (MonthlyNewListings !== null) setNewListingStats(MonthlyNewListings)
+                        if (MonthlyNewSignUps !== null) setNewSignUpStats(MonthlyNewSignUps)
+                        if (MonthlyCompletedListings !== null) setCompletedListings(MonthlyCompletedListings)
+                        if (MonthlyAllListings !== null) setAllListings(MonthlyAllListings) 
+
                         break
                     default: 
                         console.error('Date range invalid')
@@ -49,15 +91,6 @@ const GenerateReport = () => {
     }, [range])
 
     const UrgencyData = [ {value: 50}, {value: 80}, {value: 90} ]
-    const ServiceData = [ 
-        {value: 50}, 
-        {value: 80}, 
-        {value: 90},
-        {value: 50}, 
-        {value: 80}, 
-        {value: 90},
-        {value: 65},
-    ]
 
     return (
         <SafeAreaViewContainer>
@@ -90,7 +123,7 @@ const GenerateReport = () => {
                             <LongCardText>Sign ups</LongCardText>
                         </LongCardRow>
                         <LongCardRow>
-                            <LongCardNumber>22</LongCardNumber>
+                            <LongCardNumber>{newSignUpStats}</LongCardNumber>
                         </LongCardRow>
                     </LongCard>
                     <LongCard>
@@ -114,8 +147,8 @@ const GenerateReport = () => {
                                 <UsersRound size={40} color={'#ffffff'}/>
                             </LongCardIcon>
                             <CardTextColumn>
-                                <LongCardNumber>7</LongCardNumber>
-                                <LongCardText>Matches made</LongCardText>
+                                <LongCardNumber>{completedListings}</LongCardNumber>
+                                <LongCardText>Completed listings</LongCardText>
                             </CardTextColumn>
                         </CardRow>
                     </DefaultCard>
@@ -139,23 +172,21 @@ const GenerateReport = () => {
                         xAxisLength={300}
                     />
                 </GraphContainer>
-                <GraphContainer>
-                    <GraphTitle>Listings by Services</GraphTitle>
-                    <BarChart 
-                        data={ServiceData} 
-                        barBorderTopLeftRadius={8}
-                        barBorderTopRightRadius={8}
-                        spacing={16}
-                        xAxisLabelTextStyle={{
-                            color: '#6B7280',
-                            fontSize: 12,
-                            fontWeight: '500'
-                        }}
-                        barWidth={30}
-                        noOfSections={4}
-                        xAxisLabelTexts={['Companionship', 'Medical', 'Meals', 'Transport', 'Groceries', 'Home care', 'Tech support']}
-                    />
-                </GraphContainer>
+                <ServicesContainer>
+                    <GraphTitle>Listings by Services ({totalListings})</GraphTitle>
+                    {Object.entries(categoryCounts).map(([category, count]) => (
+                        <BarItem key={category}>
+                        <BarLabel>{category}</BarLabel>
+                        <BarContainer>
+                            <BarFill 
+                                width={`${(count / totalListings) * 100 * 1.5}%`}
+                            >
+                            <BarCount>{count}</BarCount>
+                            </BarFill>
+                        </BarContainer>
+                        </BarItem>
+                    ))}
+                </ServicesContainer>
             </ScrollContainer>
         </SafeAreaViewContainer>
     )
@@ -214,17 +245,6 @@ const LongCardIcon = styled.View<{ $index?: number}>`
     border-radius: 50px;
     margin-right: 14px;
 `
-const LongPercentageContainer = styled.View`
-    padding-horizontal: 8px;
-    padding-vertical: 6px;
-    border-radius: 20px;
-    background-color: #10B981;
-`
-const LongPercentageText = styled.Text`
-    font-weight: 600;
-    font-size: 16px;
-    color: #FFFFFF;
-`
 const CardTextColumn = styled.View`
     flex-direction: column;
 `
@@ -236,13 +256,52 @@ const GraphTitle = styled.Text`
     font-size: 20px;
     font-weight: 700;
     padding-vertical: 10px;
-    padding-horizontal: 16px;
+    margin-bottom: 10px;
 `
 const GraphContainer = styled.View`
     background-color: #D0D0D0;
     align-self: center;
     width: 100%;
-    height: 280px;
+    height: 300px;
     border-radius: 14px;
     margin-vertical: 10px;
+    padding-horizontal: 10px;
 `
+const ServicesContainer = styled.View`
+    background-color: #D0D0D0;
+    align-self: center;
+    width: 100%;
+    height: 570;
+    border-radius: 14px;
+    margin-vertical: 10px;
+    padding-horizontal: 10px;
+`
+const BarItem = styled.View`
+    margin-bottom: 16px;
+`;
+const BarLabel = styled.Text`
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+`;
+const BarContainer = styled.View`
+    height: 32px;
+    background-color: #F3F4F6;
+    border-radius: 8px;
+    overflow: hidden;
+`;
+const BarFill = styled.View<{ width: string }>`
+    height: 100%;
+    width: ${props => props.width};   
+    background-color: #2563EB;
+    justify-content: center;
+    padding-horizontal: 12px;
+`;
+
+const BarCount = styled.Text`
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+`;
+
