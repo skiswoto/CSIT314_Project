@@ -4,10 +4,11 @@ import SegmentedControl from '@react-native-segmented-control/segmented-control'
 import { useRouter } from 'expo-router'
 import { FileCheck2, MoveLeft, UserCheck2, UsersRound } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
-import { Dimensions, Pressable } from 'react-native'
+import { Dimensions, Pressable, View } from 'react-native'
 import { BarChart } from "react-native-gifted-charts"
 import { styled } from 'styled-components/native'
 import { Listing } from '../../services/listings'
+import { ScreenTitleText, TopBar } from './userActivity'
 
 
 const SCREEN_WIDTH = Dimensions.get("screen").width
@@ -18,9 +19,7 @@ const GenerateReport = () => {
     const [newListingStats, setNewListingStats] = useState<number>(0)
     const [newSignUpStats, setNewSignUpStats] = useState<number>(0)
     const [completedListings, setCompletedListings] = useState<number>(0)
-
     const [allListings, setAllListings] = useState<Listing[]>([])
-
     const totalListings = allListings?.length || 0
 
     const categoryCounts = allListings?.reduce((acc, listing) => {
@@ -44,7 +43,7 @@ const GenerateReport = () => {
                         const { data: DailyNewSignUps, error: DailySignUpsErr } = await supabase.rpc('grab_num_of_new_signups', { range: '24h' })
                         const { data: DailyCompletedListings, error: DailyCompletedListingsError } = await supabase.rpc('grab_num_of_completed_listings', { range: '24h' })
                         const { data: DailyAllListings, error: DailyAllListingsErr } = await supabase.rpc('grab_all_listings_dynamic', { range: '24h' })
-
+                    
                         if (DailyListingsErr || DailySignUpsErr || DailyCompletedListingsError || DailyAllListingsErr) throw {DailyListingsErr, DailySignUpsErr, DailyCompletedListingsError, DailyAllListingsErr}
 
                         if (DailyNewListings !== null) setNewListingStats(DailyNewListings)
@@ -73,6 +72,7 @@ const GenerateReport = () => {
                         const { data: MonthlyCompletedListings, error: MonthlyCompletedListingsError } = await supabase.rpc('grab_num_of_completed_listings', { range: '30d' })
                         const { data: MonthlyAllListings, error: MonthlyAllListingsErr } = await supabase.rpc('grab_all_listings_dynamic', { range: '30d' })
 
+                        
                         if (MonthlySignUpsErr || MonthlyListingsErr || MonthlyCompletedListingsError || MonthlyAllListingsErr) throw {MonthlySignUpsErr, MonthlyListingsErr, MonthlyAllListingsErr, MonthlyCompletedListingsError}
 
                         if (MonthlyNewListings !== null) setNewListingStats(MonthlyNewListings)
@@ -94,12 +94,15 @@ const GenerateReport = () => {
     return (
         <SafeAreaViewContainer>
             <ScrollContainer>
-                <Pressable 
-                    onPress={() => router.back()}
-                    style={{ marginBottom: 30 }}
-                >
-                    <MoveLeft size={26} />
-                </Pressable>
+                <TopBar>
+                    <Pressable 
+                        onPress={() => router.back()}
+                    >
+                        <MoveLeft size={26} />
+                    </Pressable>
+                    <ScreenTitleText>Platform Statistics</ScreenTitleText>
+                    <View></View>
+                </TopBar>
                 <SegmentedControl
                     values={['Day', 'Week', 'Month']}
                     tintColor='#000000'

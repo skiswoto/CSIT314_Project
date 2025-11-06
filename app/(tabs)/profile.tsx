@@ -4,9 +4,9 @@ import { styled } from 'styled-components/native';
 import { H1, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 
 const Profile = () => {
-    const user = userAuthStore(s => s.user)
+    const user = userAuthStore((s) => s.user)
     const userName = user?.user_metadata.name
-
+    
     return (
         <>
             <SafeAreaViewContainer>
@@ -24,6 +24,11 @@ const Profile = () => {
                     <Link href="../(report)/generateReport" asChild>
                         <ViewStatsButton>
                             <ViewStatsButtonText>View Stats as (PM)</ViewStatsButtonText>
+                        </ViewStatsButton>
+                    </Link>
+                    <Link href="../(report)/userActivity" asChild>
+                        <ViewStatsButton>
+                            <ViewStatsButtonText>View user logs (UA)</ViewStatsButtonText>
                         </ViewStatsButton>
                     </Link>
                 </ScrollContainer>
