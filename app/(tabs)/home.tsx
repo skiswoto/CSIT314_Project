@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
+import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
-import FilterBottomSheet from '../filter';
 
 const Home = () => {
   const router = useRouter();
@@ -126,9 +126,7 @@ const Home = () => {
       <StatusBar />
       <SafeAreaViewContainer>
         <HeaderSection>
-          <MenuContainer>
-            <Menu size={26} />
-          </MenuContainer>
+          <MenuContainer />
           <Bar>
             <SearchBar>
               <Search />
@@ -306,12 +304,7 @@ const HeaderSection = styled.View`
 `;
 
 const MenuContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
   padding-top: 80px;
-  padding-horizontal: 20px;
-  margin-bottom: 24px;
 `;
 
 const Bar = styled.View`
