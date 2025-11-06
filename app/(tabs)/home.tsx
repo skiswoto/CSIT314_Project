@@ -195,7 +195,7 @@ const Home = () => {
               onPress={() => router.navigate({
                 pathname: '/(specific-listing)/sampleListing',
                 params: {
-                  listingId: listing.id,
+                  listingId: String(listing.id),
                   category: listing.category,
                   description: listing.description,
                   address: listing.street_address,
