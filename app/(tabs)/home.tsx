@@ -195,7 +195,7 @@ const Home = () => {
               onPress={() => router.navigate({
                 pathname: '/(specific-listing)/sampleListing',
                 params: {
-                  listingId: listing.id,
+                  listingId: String(listing.id),
                   category: listing.category,
                   description: listing.description,
                   address: listing.street_address,
@@ -547,10 +547,10 @@ const CreateListingContainer = styled.Pressable`
   elevation: 4;
 `;
 
-const ResultsHeader = styled.View`
-  margin-bottom: 16px;
-  padding-horizontal: 8px;
-`;
+// const ResultsHeader = styled.View`
+//   margin-bottom: 16px;
+//   padding-horizontal: 8px;
+// `;
 
 const ResultsHeaderText = styled.Text`
   font-size: 18px;

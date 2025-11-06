@@ -29,13 +29,22 @@ export const uploadDocument = async (
             : `temp/${fileName}`;
         
         console.log('Uploading to path:', filePath);
-
+        
+        // For React Native, we need to create a FormData-like object
+        // Supabase accepts ArrayBuffer or File-like objects
+        const fileData = {
+            uri: file.uri,
+            type: file.type,
+            name: fileName,
+        };
+        
+        // Use fetch to get the file as arrayBuffer
         const response = await fetch(file.uri);
-        const blob = await response.blob();
+        const arrayBuffer = await response.arrayBuffer();
         
         const { data, error } = await supabase.storage
             .from('supporting-docs')
-            .upload(filePath, blob, {
+            .upload(filePath, arrayBuffer, {
                 contentType: file.type,
                 upsert: false,
             });
@@ -44,7 +53,6 @@ export const uploadDocument = async (
             console.error('Upload error:', error);
             return null;
         }
-
         console.log('Upload successful:', data);
         return filePath;
     } catch (error) {
@@ -66,7 +74,6 @@ export const getDocumentSignedUrl = async (
             console.error('Error creating signed URL:', error);
             return null;
         }
-
         return data.signedUrl;
     } catch (error) {
         console.error('Signed URL error:', error);
@@ -75,22 +82,23 @@ export const getDocumentSignedUrl = async (
 };
 
 export const saveDocumentRecord = async (
-    listingId: number,
     documentUrl: string,
+    userId: string,
+    listingId?: number
 ): Promise<boolean> => {
     try {
         const { error } = await supabase
             .from('supporting_documents')
             .insert({
-                listing_id: listingId,
+                listing_id: listingId || null,
                 document_url: documentUrl,
+                user_id: userId,
             });
         
         if (error) {
             console.error('Database insert error:', error);
             return false;
         }
-
         return true;
     } catch (error) {
         console.error('Save document record error:', error);
@@ -98,52 +106,72 @@ export const saveDocumentRecord = async (
     }
 };
 
+export const linkDocumentsToListing = async (
+    documentUrls: string[],
+    listingId: number
+): Promise<boolean> => {
+    try {
+        const { error } = await supabase
+            .from('supporting_documents')
+            .update({ listing_id: listingId })
+            .in('document_url', documentUrls);
+        
+        if (error) {
+            console.error('Error linking documents:', error);
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Link documents error:', error);
+        return false;
+    }
+};
+
 export const uploadAndSaveDocument = async (
     file: DocumentUpload,
-    listingId: number
+    listingId: number,
+    userId: string
 ): Promise<string | null> => {
     const documentUrl = await uploadDocument(file, listingId);
     
     if (!documentUrl) {
         return null;
     }
-
-    const saved = await saveDocumentRecord(listingId, documentUrl);
+    const saved = await saveDocumentRecord(documentUrl, userId, listingId);
     return saved ? documentUrl : null;
 };
 
 export const deleteDocument = async (
     documentUrl: string,
-    listingId: number
+    listingId?: number
 ): Promise<boolean> => {
     try {
-        const urlParts = documentUrl.split('/supporting-docs/');
-        if (urlParts.length < 2) {
-            console.error('Invalid document URL');
-            return false;
-        }
-        
-        const filePath = urlParts[1];
-
+        // Delete from storage
         const { error: storageError } = await supabase.storage
             .from('supporting-docs')
-            .remove([filePath]);
+            .remove([documentUrl]);
         
         if (storageError) {
             console.error('Storage delete error:', storageError);
             return false;
         }
 
-        const { error: dbError } = await supabase
+        // Delete from database
+        const deleteQuery = supabase
             .from('supporting_documents')
             .delete()
-            .match({ listing_id: listingId, document_url: documentUrl });
+            .eq('document_url', documentUrl);
 
+        if (listingId) {
+            deleteQuery.eq('listing_id', listingId);
+        }
+
+        const { error: dbError } = await deleteQuery;
+        
         if (dbError) {
             console.error('Database delete error:', dbError);
             return false;
         }
-
         return true;
     } catch (error) {
         console.error('Delete document error:', error);
