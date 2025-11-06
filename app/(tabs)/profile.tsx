@@ -2,12 +2,12 @@ import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
 import { Link, useRouter } from 'expo-router';
 import { styled } from 'styled-components/native';
-import { H1, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
+import { H1, H3, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 
 const Profile = () => {
     const user = userAuthStore((s) => s.user);
     const userName = user?.user_metadata.name;
-    // const userRole = user?.user_metadata.role;
+    const userRole = user?.user_metadata.role;
     const router = useRouter();
 
     const handleLogout = async () => {
@@ -50,7 +50,10 @@ const Profile = () => {
         <SafeAreaViewContainer>
         <ScrollContainer>
             {user ? 
-                <H1>Hi {userName}!</H1> 
+                <>
+                    <H1>Hi {userName}!</H1> 
+                    <H3>User role: {userRole}</H3>
+                </>
                 : 
                 <H1>profile</H1>
             }
