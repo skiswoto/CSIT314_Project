@@ -5,6 +5,7 @@ const ReportLayout = () => {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="generateReport" />
             <Stack.Screen name="userActivity" />
+            <Stack.Screen name="personalStats" />
         </Stack>
     )
 }
