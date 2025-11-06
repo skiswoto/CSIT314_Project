@@ -12,36 +12,68 @@ interface UserProps {
     email: string;
     name: string;
     role: string;
+    listingsCreated?: number
+    listingsDone?: number;
+}
+
+interface ListingPerUser {
+    name: string;
+    quantity: number;
 }
 
 const UserActivity = () => {
     const router = useRouter()
-
     const [users, setUsers] = useState<UserProps[]>([])
+    const [listings, setListings] = useState<ListingPerUser[]>([])
 
     const grabAllUsers = async () => {
         try {
-            const { data, error } = await supabase
+            const { data: allUsers, error: allUsersErr } = await supabase
                 .from('Profiles')
                 .select('*')
                 .order('email', { ascending: true });
             
-            if (error) {
-                console.error(error);
+            if (allUsersErr) {
+                console.error(allUsersErr);
                 setUsers([]);
                 return;
             }
             
-            setUsers(data || []);
+            setUsers(allUsers || []);
         } catch (err) {
             console.error("Unexpected error:", err);
             setUsers([]);
         }
     }
 
+    const grabCreatedListingsPerUser = async() => {
+        try {
+            const {data: ListingsData, error: ListingsErr} = await supabase.rpc('compile_num_of_listing_created_per_user')
+
+            if (ListingsErr) {
+                console.error(ListingsErr)
+                setListings([])
+                return
+            }
+            setListings(ListingsData || [])
+        } catch (err) {
+            console.error("Unexpected error:", err);
+            setListings([]);
+        }
+    }
+    
     useEffect(() => {
         grabAllUsers();
+        grabCreatedListingsPerUser()
     }, []);
+
+    const mergedData = users.map((user) => {
+        const listing = listings.find((l) => l.name === user.name); 
+        return {
+            ...user,
+            listingsCreated: listing ? listing.quantity : 0, 
+        };
+    });
 
     return (
         <SafeAreaViewContainer>
@@ -55,19 +87,41 @@ const UserActivity = () => {
                     <ScreenTitleText>User Activity Logs</ScreenTitleText>
                     <View></View>
                 </TopBar>
-                {users.map((user) => (
-                    <UserCard key={user.id}>
+                {listings.length > 0 && 
+                    mergedData.map((user) => (
+                        <UserCard key={user.id}>
+                            <UserCardRow>
+                                <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{user.name}</UserCardTextData>
+                            </UserCardRow>
+                            <UserCardRow>
+                                <UserCardTextTitle>Email: </UserCardTextTitle><UserCardTextData>{user.email}</UserCardTextData>
+                            </UserCardRow>
+                            <UserCardRow>
+                                <UserCardTextTitle>Role: </UserCardTextTitle><UserCardTextData>{user.role}</UserCardTextData>
+                            </UserCardRow>
+                            <UserCardRow>
+                                {user.role === 'pin' ? 
+                                    <>  
+                                        <UserCardTextTitle># of Listings created: </UserCardTextTitle><UserCardTextData>{user.listingsCreated}</UserCardTextData>
+                                    </>:
+                                    <>  
+                                        <UserCardTextTitle># of Listings completed: </UserCardTextTitle><UserCardTextData>{user.listingsDone || 0}</UserCardTextData>
+                                    </>                            
+                                }
+                            </UserCardRow>
+                            <UserCardRow>
+                                <UserCardTextTitle>Created at: </UserCardTextTitle><UserCardTextData>{user.created_at}</UserCardTextData>
+                            </UserCardRow>
+                        </UserCard>
+                    ))
+                }
+                {listings.length > 0 && listings.map((listing, index) => (
+                    <UserCard key={index}>
                         <UserCardRow>
-                            <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{user.name}</UserCardTextData>
+                            <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{listing.name}</UserCardTextData>
                         </UserCardRow>
                         <UserCardRow>
-                            <UserCardTextTitle>Email: </UserCardTextTitle><UserCardTextData>{user.email}</UserCardTextData>
-                        </UserCardRow>
-                        <UserCardRow>
-                            <UserCardTextTitle>Role: </UserCardTextTitle><UserCardTextData>{user.role}</UserCardTextData>
-                        </UserCardRow>
-                        <UserCardRow>
-                            <UserCardTextTitle>Created at: </UserCardTextTitle><UserCardTextData>{user.created_at}</UserCardTextData>
+                            <UserCardTextTitle># of Listings Created: </UserCardTextTitle><UserCardTextData>{listing.quantity}</UserCardTextData>
                         </UserCardRow>
                     </UserCard>
                 ))}
