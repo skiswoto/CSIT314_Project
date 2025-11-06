@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { AlertCircle, MapPin, Menu, Search, SlidersHorizontal, X } from 'lucide-react-native';
-import { Alert, StatusBar, View } from 'react-native';
+import { AlertCircle, MapPin, X } from 'lucide-react-native';
+import { Alert, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
-import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
+import { H2, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
+import { ResultsHeader } from './myListings';
 
 // Sample data for saved/shortlisted requests - can be replaced with Supabase data later
 const savedRequests = [
@@ -99,29 +100,10 @@ const SavedRequests = () => {
             <StatusBar />
             <SafeAreaViewContainer>
                 <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-                    
-                    {/*Menu Icon*/}
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '40%',
-                            marginBottom: 16,
-                        }}
-                    >
-                        <Menu size={26} />
-                    </View>
+                    <ResultsHeader>
+                        <H2>Saved Listings ({savedRequests.length})</H2>
+                    </ResultsHeader>
 
-                    {/* Search Bar & Filter */}
-                    <Bar>
-                        <SearchBar>
-                            <Search />
-                        </SearchBar>
-                        <Filter>
-                            <SlidersHorizontal />
-                        </Filter>
-                    </Bar>
 
                     {/* Empty State */}
                     {savedRequests.length === 0 ? (
@@ -209,43 +191,6 @@ const SavedRequests = () => {
 };
 
 export default SavedRequests;
-
-// Search Bar Styles
-const Bar = styled.View`
-    flex-direction: row;
-    background-color: #E6E6E6;
-    padding-horizontal: 4px;
-    padding-vertical: 6px;
-    border-radius: 30px;
-    justify-content: space-evenly;
-    align-items: center;
-    shadow-color: #000000;
-    shadow-offset: 0px 0.5px;
-    shadow-radius: 1px;
-    shadow-opacity: 0.3;
-    elevation: 1;
-    width: 99%;
-    align-self: center;
-    margin-bottom: 20px;
-`;
-
-const SearchBar = styled.Pressable`
-    padding-horizontal: 20px;
-    padding-vertical: 12px;
-    background-color: #ffffff;
-    border-radius: 30px;
-    overflow: hidden;
-    justify-content: flex-start;
-    width: 80%;
-`;
-
-const Filter = styled.Pressable`
-    padding-horizontal: 14px;
-    padding-vertical: 12px;
-    background-color: #ffffff;
-    border-radius: 30px;
-    overflow: hidden;
-`;
 
 const EmptyState = styled.View`
     align-items: center;

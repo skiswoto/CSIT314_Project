@@ -13,14 +13,6 @@ const TabLayout = (): React.ReactElement => {
                 }}
             />
             <Tabs.Screen
-                name="viewRequest"
-                options={{
-                    title:'View Request (CSR)',
-                    headerShown: false, 
-                    tabBarIcon: () => <FileUser />
-                }}
-            />
-            <Tabs.Screen
                 name="myListings"
                 options={{
                     title:'View Own Request (PIN)',
@@ -39,8 +31,9 @@ const TabLayout = (): React.ReactElement => {
             <Tabs.Screen 
                 name="analytics"
                 options={{
-                tabBarIcon: ({ color}) => <BarChart3 size={24} color={color} />,
-                tabBarLabel: 'Analytics',
+                    headerShown: false, 
+                    tabBarIcon: ({ color}) => <BarChart3 size={24} color={color} />,
+                    tabBarLabel: 'Analytics',
                 }}
             />
             <Tabs.Screen 

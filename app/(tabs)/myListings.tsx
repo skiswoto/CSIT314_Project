@@ -19,10 +19,10 @@ export default MyListings
 */
 
 import { useRouter } from 'expo-router';
-import { Edit2, Menu, Search, SlidersHorizontal, Trash2 } from 'lucide-react-native';
-import { Alert, StatusBar, View } from 'react-native';
+import { Edit2, Trash2 } from 'lucide-react-native';
+import { Alert, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
-import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
+import { H2, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 
 // Sample data for PIN's own listings - can be replaced with Supabase data later
 const myListings = [
@@ -104,32 +104,9 @@ const MyListings = () => {
             <StatusBar />
             <SafeAreaViewContainer>
                 <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-                    {/*Menu Icon*/}
-                    <View
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '40%',
-                            marginBottom: 16,
-                        }}
-                    >
-                        <Menu size={26} />
-                    </View>
-
-                    {/* Search Bar & Filter */}
-                    <Bar>
-                        <SearchBar>
-                            <Search />
-                        </SearchBar>
-                        <Filter>
-                            <SlidersHorizontal />
-                        </Filter>
-                    </Bar>
-
                     {/* Results Header */}
                     <ResultsHeader>
-                        <ResultsHeaderText>My Requests ({myListings.length})</ResultsHeaderText>
+                        <H2>My Requests ({myListings.length})</H2>
                     </ResultsHeader>
 
                     {/* Scrollable My Listings */}
@@ -191,48 +168,11 @@ const MyListings = () => {
 
 export default MyListings;
 
-// Search Bar Styles
-const Bar = styled.View`
-    flex-direction: row;
-    background-color: #E6E6E6;
-    padding-horizontal: 4px;
-    padding-vertical: 6px;
-    border-radius: 30px;
-    justify-content: space-evenly;
-    align-items: center;
-    shadow-color: #000000;
-    shadow-offset: 0px 0.5px;
-    shadow-radius: 1px;
-    shadow-opacity: 0.3;
-    elevation: 1;
-    width: 99%;
-    align-self: center;
-    margin-bottom: 20px;
-`;
-
-const SearchBar = styled.Pressable`
-    padding-horizontal: 20px;
-    padding-vertical: 12px;
-    background-color: #ffffff;
-    border-radius: 30px;
-    overflow: hidden;
-    justify-content: flex-start;
-    width: 80%;
-`;
-
-const Filter = styled.Pressable`
-    padding-horizontal: 14px;
-    padding-vertical: 12px;
-    background-color: #ffffff;
-    border-radius: 30px;
-    overflow: hidden;
-`;
-
-const ResultsHeader = styled.View`
+export const ResultsHeader = styled.View`
     margin-bottom: 16px;
 `;
 
-const ResultsHeaderText = styled.Text`
+export const ResultsHeaderText = styled.Text`
     font-size: 18px;
     font-weight: 600;
     color: #1F2937;
