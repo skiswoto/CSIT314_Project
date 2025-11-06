@@ -16,3 +16,8 @@ export const H2 = styled.Text`
     font-weight: 700;
     margin-bottom: 4px;
 `
+export const H3 = styled.Text`
+    font-size: 18px;    
+    font-weight: 500;
+    color: #A5A5A5;
+`
