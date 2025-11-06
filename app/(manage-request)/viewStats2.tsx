@@ -1,12 +1,10 @@
-import React from 'react';
-import { StatusBar, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Eye, MousePointerClick, TrendingUp } from 'lucide-react-native';
+import { StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
-import { LineChart } from 'recharts';
 
-const screenWidth = Dimensions.get('window').width;
+// const screenWidth = Dimensions.get('window').width;
 
 // Sample stats data
 const statsData = {

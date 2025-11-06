@@ -547,10 +547,10 @@ const CreateListingContainer = styled.Pressable`
   elevation: 4;
 `;
 
-const ResultsHeader = styled.View`
-  margin-bottom: 16px;
-  padding-horizontal: 8px;
-`;
+// const ResultsHeader = styled.View`
+//   margin-bottom: 16px;
+//   padding-horizontal: 8px;
+// `;
 
 const ResultsHeaderText = styled.Text`
   font-size: 18px;
