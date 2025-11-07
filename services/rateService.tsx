@@ -3,9 +3,9 @@ import { Star } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StatusBar, TouchableOpacity } from 'react-native';
 import { styled } from 'styled-components/native';
-import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
-import { supabase } from '../../libs/supabase';
-import { submitRating } from '../../services/ratings';
+import { SafeAreaViewContainer, ScrollContainer } from '../constants/GlobalStyles';
+import { supabase } from '../libs/supabase';
+import { submitRating } from './ratings';
 
 const RateService = () => {
     const router = useRouter();
