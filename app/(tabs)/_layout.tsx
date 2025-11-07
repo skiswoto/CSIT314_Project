@@ -1,6 +1,6 @@
 import { userAuthStore } from '@/global/userAuthStore';
-import { Tabs } from 'expo-router';
-import { Activity, BarChart, ChartLine, FileUser, User, UserRoundSearch } from 'lucide-react-native';
+import { Href, Tabs } from 'expo-router';
+import { Activity, BarChart, ChartLine, FileUser, HeartPulse, User, UserRoundSearch } from 'lucide-react-native';
 
 
 export default function TabLayout() {
@@ -11,7 +11,7 @@ export default function TabLayout() {
         unregistered: ['home', 'profile'],
         pin: ['home', 'myListings', 'engagementStats', 'profile'],
         csr_rep: ['home', 'savedRequest', 'analytics', 'profile'],
-        platform_manager: ['home', 'platformAnalytics', 'profile'],
+        platform_manager: ['home', 'platformAnalytics', 'appHealth', 'profile'],
         user_admin: ['home', 'platformAnalytics', 'userLogs', 'profile'],
     } as const;
 
@@ -70,6 +70,13 @@ export default function TabLayout() {
             headerShown: false,
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
                 <ChartLine color={color} size={size} />
+            ),
+        }, 
+        appHealth: {
+            title: 'Platform Health',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <HeartPulse color={color} size={size} />
             ),
         }
     };
@@ -130,6 +137,13 @@ export default function TabLayout() {
                 options={{
                     ...tabConfig.engagementStats,
                     href: isTabVisible('engagementStats') ? '/engagementStats' : null,
+                }}
+            />
+            <Tabs.Screen
+                name="appHealth"
+                options={{
+                    ...tabConfig.appHealth,
+                    href: (isTabVisible('appHealth') ? '/appHealth' : null) as Href || null,
                 }}
             />
             <Tabs.Screen
