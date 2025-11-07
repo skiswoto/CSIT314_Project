@@ -27,6 +27,18 @@ const AuthLayout = () => {
                     headerShown: false,
                 }}
             />
+            <Stack.Screen
+                name="createPMForm"
+                options={{
+                    headerShown: false,
+                }}
+            />
+            <Stack.Screen
+                name="createUAForm"
+                options={{
+                    headerShown: false,
+                }}
+            />
         </Stack>
     );
 };
