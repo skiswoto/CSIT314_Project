@@ -16,6 +16,7 @@ const Profile = () => {
             const { error } = await supabase.auth.signOut();
             if (error) throw error
             userAuthStore.setState({ user: null });
+            userAuthStore.getState().clearUser()
             Alert.alert(
                 'Log out Succesful',
                 'See you again!',
