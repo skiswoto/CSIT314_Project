@@ -1,5 +1,6 @@
 export const PERMISSIONS = {
     'pin': {
+        canViewAllListings: true,
         canCreateListings: true,
         canViewPersonalStats: true,
     },
@@ -8,10 +9,11 @@ export const PERMISSIONS = {
         canViewCSRStats: true,
     },
     'platform_manager': {
-        canViewPlatformStats: true,
         canViewAllListings: true,
+        canViewPlatformStats: true,
     },
     'user_admin': {
+        canViewAllListings: true,
         canViewUserLog: true
     },
 }

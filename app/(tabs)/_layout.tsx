@@ -1,6 +1,6 @@
 import { userAuthStore } from '@/global/userAuthStore';
 import { Tabs } from 'expo-router';
-import { BarChart, FileUser, User, UserRoundSearch } from 'lucide-react-native';
+import { Activity, BarChart, ChartLine, FileUser, User, UserRoundSearch } from 'lucide-react-native';
 
 
 export default function TabLayout() {
@@ -9,10 +9,10 @@ export default function TabLayout() {
 
     const roleBasedTabs = {
         unregistered: ['home', 'profile'],
-        pin: ['home', 'myListings', 'profile'],
+        pin: ['home', 'myListings', 'engagementStats', 'profile'],
         csr_rep: ['home', 'savedRequest', 'analytics', 'profile'],
-        platform_manager: ['home', 'analytics', 'profile'],
-        user_admin: ['home', 'analytics', 'profile'],
+        platform_manager: ['home', 'platformAnalytics', 'profile'],
+        user_admin: ['home', 'platformAnalytics', 'userLogs', 'profile'],
     } as const;
 
     const tabConfig = {
@@ -24,7 +24,7 @@ export default function TabLayout() {
             ),
         },
         myListings: {
-            title: 'View Own Request (PIN)',
+            title: 'View My Listings',
             headerShown: false,
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
                 <FileUser color={color} size={size} />
@@ -51,6 +51,27 @@ export default function TabLayout() {
                 <User color={color} size={size} />
             ),
         },
+        platformAnalytics: {
+            title: 'Platform Analytics',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <BarChart color={color} size={size} />
+            ),
+        },
+        userLogs: {
+            title: 'User Activity',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <Activity color={color} size={size} />
+            ),
+        },
+        engagementStats: {
+            title: 'Listing Engagements',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <ChartLine color={color} size={size} />
+            ),
+        }
     };
 
     const visibleTabs = roleBasedTabs[userRole] ?? roleBasedTabs['unregistered'];
@@ -88,6 +109,27 @@ export default function TabLayout() {
                 options={{
                     ...tabConfig.analytics,
                     href: isTabVisible('analytics') ? '/analytics' : null,
+                }}
+            />
+            <Tabs.Screen
+                name="platformAnalytics"
+                options={{
+                    ...tabConfig.platformAnalytics,
+                    href: isTabVisible('platformAnalytics') ? '/platformAnalytics' : null,
+                }}
+            />
+            <Tabs.Screen
+                name="userLogs"
+                options={{
+                    ...tabConfig.userLogs,
+                    href: isTabVisible('userLogs') ? '/userLogs' : null,
+                }}
+            />
+            <Tabs.Screen
+                name="engagementStats"
+                options={{
+                    ...tabConfig.engagementStats,
+                    href: isTabVisible('engagementStats') ? '/engagementStats' : null,
                 }}
             />
             <Tabs.Screen

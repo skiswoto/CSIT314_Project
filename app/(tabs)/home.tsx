@@ -46,7 +46,7 @@ const Home = () => {
   });
 
   const handleApplyFilters = (filters: Omit<ListingFilters, 'status'>) => {
-    console.log('Applied Filters:', filters);
+    // console.log('Applied Filters:', filters);
     
     // Update the appropriate filter state based on active tab
     if (activeTab === 'available') {
@@ -119,13 +119,13 @@ const Home = () => {
     }
   };
 
-  console.log('Query state:', { 
-    isLoading, 
-    error: error?.message, 
-    listingsCount: listings?.length,
-    activeTab,
-    currentFilters
-  });
+  // console.log('Query state:', { 
+  //   isLoading, 
+  //   error: error?.message, 
+  //   listingsCount: listings?.length,
+  //   activeTab,
+  //   currentFilters
+  // });
 
   return (
     <>

@@ -1,11 +1,7 @@
-import { SafeAreaViewContainer, ScrollContainer } from '@/constants/GlobalStyles'
-import { supabase } from '@/libs/supabase'
-import { useRouter } from 'expo-router'
-import { MoveLeft } from 'lucide-react-native'
-import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
-import { styled } from 'styled-components/native'
-
+import { supabase } from '@/libs/supabase';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { styled } from 'styled-components/native';
 interface UserProps {
     id: string;
     created_at: string;
@@ -21,8 +17,7 @@ interface ListingPerUser {
     quantity: number;
 }
 
-const UserActivity = () => {
-    const router = useRouter()
+const UserLogs = () => {
     const [users, setUsers] = useState<UserProps[]>([])
     const [listings, setListings] = useState<ListingPerUser[]>([])
 
@@ -76,61 +71,41 @@ const UserActivity = () => {
     });
 
     return (
-        <SafeAreaViewContainer>
-            <ScrollContainer>
-                <TopBar>
-                    <Pressable 
-                        onPress={() => router.back()}
-                    >
-                        <MoveLeft size={26} />
-                    </Pressable>
-                    <ScreenTitleText>User Activity Logs</ScreenTitleText>
-                    <View></View>
-                </TopBar>
-                {listings.length > 0 && 
-                    mergedData.map((user) => (
-                        <UserCard key={user.id}>
-                            <UserCardRow>
-                                <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{user.name}</UserCardTextData>
-                            </UserCardRow>
-                            <UserCardRow>
-                                <UserCardTextTitle>Email: </UserCardTextTitle><UserCardTextData>{user.email}</UserCardTextData>
-                            </UserCardRow>
-                            <UserCardRow>
-                                <UserCardTextTitle>Role: </UserCardTextTitle><UserCardTextData>{user.role}</UserCardTextData>
-                            </UserCardRow>
-                            <UserCardRow>
-                                {user.role === 'pin' ? 
-                                    <>  
-                                        <UserCardTextTitle># of Listings created: </UserCardTextTitle><UserCardTextData>{user.listingsCreated}</UserCardTextData>
-                                    </>:
-                                    <>  
-                                        <UserCardTextTitle># of Listings completed: </UserCardTextTitle><UserCardTextData>{user.listingsDone || 0}</UserCardTextData>
-                                    </>                            
-                                }
-                            </UserCardRow>
-                            <UserCardRow>
-                                <UserCardTextTitle>Created at: </UserCardTextTitle><UserCardTextData>{user.created_at}</UserCardTextData>
-                            </UserCardRow>
-                        </UserCard>
-                    ))
-                }
-                {listings.length > 0 && listings.map((listing, index) => (
-                    <UserCard key={index}>
+        <>
+            <View style={{ marginTop: 20 }} />
+            {listings.length > 0 && 
+                mergedData.map((user) => (
+                    <UserCard key={user.id}>
                         <UserCardRow>
-                            <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{listing.name}</UserCardTextData>
+                            <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{user.name}</UserCardTextData>
                         </UserCardRow>
                         <UserCardRow>
-                            <UserCardTextTitle># of Listings Created: </UserCardTextTitle><UserCardTextData>{listing.quantity}</UserCardTextData>
+                            <UserCardTextTitle>Email: </UserCardTextTitle><UserCardTextData>{user.email}</UserCardTextData>
+                        </UserCardRow>
+                        <UserCardRow>
+                            <UserCardTextTitle>Role: </UserCardTextTitle><UserCardTextData>{user.role}</UserCardTextData>
+                        </UserCardRow>
+                        <UserCardRow>
+                            {user.role === 'pin' ? 
+                                <>  
+                                    <UserCardTextTitle># of Listings created: </UserCardTextTitle><UserCardTextData>{user.listingsCreated}</UserCardTextData>
+                                </>:
+                                <>  
+                                    <UserCardTextTitle># of Listings completed: </UserCardTextTitle><UserCardTextData>{user.listingsDone || 0}</UserCardTextData>
+                                </>                            
+                            }
+                        </UserCardRow>
+                        <UserCardRow>
+                            <UserCardTextTitle>Created at: </UserCardTextTitle><UserCardTextData>{user.created_at}</UserCardTextData>
                         </UserCardRow>
                     </UserCard>
-                ))}
-            </ScrollContainer>
-        </SafeAreaViewContainer>
+                ))
+            }
+        </>
     )
 }
 
-export default UserActivity
+export default UserLogs
 
 const UserCard = styled.View`
     border-radius: 16px;

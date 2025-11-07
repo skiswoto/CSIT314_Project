@@ -1,32 +1,16 @@
-import { SafeAreaViewContainer, ScrollContainer } from '@/constants/GlobalStyles';
 import { getPinDashboardData } from '@/libs/supabaseHelper';
-import { useRouter } from 'expo-router';
-import { MoveLeft } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Dimensions, Pressable, Text, View } from 'react-native';
+import { Dimensions, Text, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { styled } from 'styled-components/native';
-import { ScreenTitleText, TopBar } from './userActivity';
 
 
 const PersonalStats = () => {
-    const router = useRouter()
     return (
-        <SafeAreaViewContainer>
-            <ScrollContainer>
-                <TopBar>
-                    <Pressable 
-                        onPress={() => router.back()}
-                    >
-                        <MoveLeft size={26} />
-                    </Pressable>
-                    <ScreenTitleText>Personal Statistics</ScreenTitleText>
-                    <View></View>
-                </TopBar>
-                <PinDashboard />
-                <CsrDashboard />
-            </ScrollContainer>
-        </SafeAreaViewContainer>
+        <>
+            <PinDashboard />
+            <CsrDashboard />
+        </>
     )
 }
 
@@ -34,7 +18,6 @@ export default PersonalStats
 
 
 const PinDashboard = () => {
-    // Always start with a safe, valid chart structure
     const emptyChart = { labels: [] as string[], datasets: [{ data: [] as number[] }] };
 
     const [clickData, setClickData] = useState(emptyChart);
@@ -77,19 +60,16 @@ const PinDashboard = () => {
             setClickData({
             labels: months,
             datasets: [{ data: clicks}]
-            // datasets: [{ data: clicks, strokeWidth: 3, color: () => `#FF6347` }],
             });
 
             setAcceptData({
             labels: months,
             datasets: [{ data: accepts}]
-            // datasets: [{ data: accepts, strokeWidth: 3, color: () => `#32CD32` }],
             });
 
             setCompleteData({
             labels: months,
             datasets: [{ data: completes}]
-            // datasets: [{ data: completes, strokeWidth: 3, color: () => `#1E90FF` }],
             });
         } catch (e) {
             console.error('Error fetching PIN dashboard:', e);
@@ -116,10 +96,9 @@ const PinDashboard = () => {
 
     return (
         <PinContainer>
-        <Text>Your Request Stats:</Text>
 
         <Section>
-            <Text>People Clicking:</Text>
+            <SectionTitle>People Clicking:</SectionTitle>
             {hasData(clickData) ? (
             <LineChart
                 data={clickData}
@@ -134,9 +113,8 @@ const PinDashboard = () => {
             <Text style={{ opacity: 0.6 }}>{loading ? 'Loading…' : 'No data'}</Text>
             )}
         </Section>
-
         <Section>
-            <Text>People Accepting:</Text>
+            <SectionTitle>People Accepting:</SectionTitle>
             {hasData(acceptData) ? (
             <LineChart
                 data={acceptData}
@@ -151,9 +129,8 @@ const PinDashboard = () => {
             <Text style={{ opacity: 0.6 }}>{loading ? 'Loading…' : 'No data'}</Text>
             )}
         </Section>
-
         <Section>
-            <Text>People Completing:</Text>
+            <SectionTitle>People Completing:</SectionTitle>
             {hasData(completeData) ? (
             <LineChart
                 data={completeData}
@@ -168,23 +145,23 @@ const PinDashboard = () => {
             <Text style={{ opacity: 0.6 }}>{loading ? 'Loading…' : 'No data'}</Text>
             )}
         </Section>
-
         {!!hadError && <Text style={{ color: '#d33', marginTop: 8 }}>{hadError}</Text>}
         </PinContainer>
     );
 };
 
-/** ----------- (stub) CSR dashboard so file compiles ----------- */
 const CsrDashboard = () => <View />;
 
-/* ---------------- styles ---------------- */
 const Section = styled.View`
     margin-top: 10px;
     margin-bottom: 16px;
 `;
-
 const PinContainer = styled.View`
-    margin-top: 20px;
-    padding: 10px;
+    align-self: center;
     background-color: #f0f0f0;
 `;
+const SectionTitle = styled.Text`
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 5px
+`
