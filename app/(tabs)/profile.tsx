@@ -17,7 +17,7 @@ const Profile = () => {
             const { error } = await supabase.auth.signOut();
             if (error) throw error
             userAuthStore.getState().clearUser()
-            router.replace('/(user-auth)/loginForm')
+            router.navigate('/(user-auth)/loginForm')
             Alert.alert(
                 'Log out Succesful',
                 'See you again!',
