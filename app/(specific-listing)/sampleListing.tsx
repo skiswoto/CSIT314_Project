@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Calendar, CheckCircle, Clock, Download, Heart, MapPin, TrendingUp } from 'lucide-react-native';
-import { useState } from 'react'; // Add if not already there
+import { ArrowLeft, Calendar, CheckCircle, Clock, Download, Heart, MapPin, Star, TrendingUp } from 'lucide-react-native';
+import { useState } from 'react';
 import { Alert, Image, ImageBackground, ScrollView, StyleSheet } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
@@ -59,7 +59,6 @@ const SampleListing = () => {
     }
 
     const handleExportData = async () => {
-        // Create CSV-like data
         const data = `
 Service Report
 --------------
@@ -71,7 +70,6 @@ Duration: ${duration} hours
 Urgency: ${urgency}
 Status: ${status}
         `.trim();
-
         Alert.alert('Export Data', data, [
             { text: 'OK' }
         ]);
@@ -80,44 +78,51 @@ Status: ${status}
     const [isAccepting, setIsAccepting] = useState(false)
 
     const handleAcceptListing = async () => {
-    try {
-        setIsAccepting(true)
-        
-        // Normalize the listing ID
-        const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId
-        
-        if (!normalizedListingId) {
-        Alert.alert('Error', 'Invalid listing ID')
-        return
+        try {
+            setIsAccepting(true)
+            
+            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId
+            
+            if (!normalizedListingId) {
+                Alert.alert('Error', 'Invalid listing ID')
+                return
+            }
+            
+            console.log('🚀 Accepting listing:', normalizedListingId)
+            
+            await acceptListing(normalizedListingId)
+            
+            await sendListingAcceptedEmail({
+                listingId: normalizedListingId,
+                category: (Array.isArray(category) ? category[0] : category) || 'N/A',
+                description: (Array.isArray(description) ? description[0] : description) || 'N/A',
+                address: (Array.isArray(address) ? address[0] : address) || 'N/A',
+                startTime: (Array.isArray(startTime) ? startTime[0] : startTime) || 'N/A',
+                duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A'
+            })
+            
+            Alert.alert(
+                '✅ Success!',
+                'Listing accepted! Email sent to kiswotoshawn@gmail.com',
+                [{ text: 'OK', onPress: () => router.back() }]
+            )
+            
+        } catch (error) {
+            console.error('❌ Error:', error)
+            Alert.alert('Error', 'Failed to accept listing. Please try again.')
+        } finally {
+            setIsAccepting(false)
         }
-        
-        console.log('🚀 Accepting listing:', normalizedListingId)
-        
-        // Update database
-        await acceptListing(normalizedListingId)
-        
-        // Send email
-        await sendListingAcceptedEmail({
-        listingId: normalizedListingId,
-        category: (Array.isArray(category) ? category[0] : category) || 'N/A',
-        description: (Array.isArray(description) ? description[0] : description) || 'N/A',
-        address: (Array.isArray(address) ? address[0] : address) || 'N/A',
-        startTime: (Array.isArray(startTime) ? startTime[0] : startTime) || 'N/A',
-        duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A'
-        })
-        
-        Alert.alert(
-        '✅ Success!',
-        'Listing accepted! Email sent to kiswotoshawn@gmail.com',
-        [{ text: 'OK', onPress: () => router.back() }]
-        )
-        
-    } catch (error) {
-        console.error('❌ Error:', error)
-        Alert.alert('Error', 'Failed to accept listing. Please try again.')
-    } finally {
-        setIsAccepting(false)
     }
+
+    const handleRateService = () => {
+        router.push({
+            pathname: '/(manage-request)/rateService',
+            params: {
+                listingId: Array.isArray(listingId) ? listingId[0] : listingId,
+                category: Array.isArray(category) ? category[0] : category,
+            }
+        })
     }
 
     return (
@@ -191,7 +196,6 @@ Status: ${status}
                                     <InsightLabel>Status</InsightLabel>
                                     <InsightValue>Completed</InsightValue>
                                 </InsightCard>
-
                                 <InsightCard>
                                     <InsightIcon>
                                         <Clock size={24} color="#2563EB" />
@@ -201,7 +205,6 @@ Status: ${status}
                                         {duration ? `${Array.isArray(duration) ? duration[0] : duration} hrs` : 'N/A'}
                                     </InsightValue>
                                 </InsightCard>
-
                                 <InsightCard>
                                     <InsightIcon>
                                         <Calendar size={24} color="#7C3AED" />
@@ -209,7 +212,6 @@ Status: ${status}
                                     <InsightLabel>Start Time</InsightLabel>
                                     <InsightValue>{formatTime(startTime)}</InsightValue>
                                 </InsightCard>
-
                                 <InsightCard>
                                     <InsightIcon>
                                         <MapPin size={24} color="#DC2626" />
@@ -237,14 +239,12 @@ Status: ${status}
                                     <DetailText>{Array.isArray(address) ? address[0] : address}</DetailText>
                                 </DetailRow>
                             )}
-
                             {startTime && (
                                 <DetailRow>
                                     <Clock size={18} color="#6B7280" />
                                     <DetailText>Starts at {formatTime(startTime)}</DetailText>
                                 </DetailRow>
                             )}
-
                             {duration && (
                                 <DetailRow>
                                     <Calendar size={18} color="#6B7280" />
@@ -267,6 +267,7 @@ Status: ${status}
                         </ChatButton>
                     </Row>
 
+                    {/* CONDITIONAL BUTTONS BASED ON STATUS */}
                     <ApplyButton 
                         disabled={isCompleted || isAccepting}
                         onPress={handleAcceptListing}
@@ -280,6 +281,14 @@ Status: ${status}
                             }
                         </ApplyButtonText>
                     </ApplyButton>
+
+                    {/* RATING BUTTON FOR COMPLETED LISTINGS */}
+                    {isCompleted && (
+                        <RateServiceButton onPress={handleRateService}>
+                            <Star size={20} color="#FBBF24" fill="#FBBF24" />
+                            <RateServiceButtonText>Rate Service</RateServiceButtonText>
+                        </RateServiceButton>
+                    )}
                 </Card>
             </ScrollView>
         </SafeAreaViewContainer>
@@ -318,6 +327,21 @@ const ApplyButton = styled.TouchableOpacity`
     padding-vertical: 18px;
 `
 
+const RateServiceButton = styled.TouchableOpacity`
+    background-color: #FEF3C7;
+    border-radius: 24px;
+    overflow: hidden;
+    padding-horizontal: 14px;
+    padding-vertical: 18px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-width: 2px;
+    border-color: #FBBF24;
+    margin-top: 20px;
+`
+
 const ChatButton = styled.Pressable`
     background-color: #F2F2F2;
     border-radius: 24px;
@@ -350,6 +374,13 @@ const ApplyButtonText = styled(ComponentText)`
     font-weight: 600;
     font-size: 20px;
     color: #ffffff;
+`
+
+const RateServiceButtonText = styled.Text`
+    font-weight: 600;
+    font-size: 20px;
+    color: #92400E;
+    align-self: center;
 `
 
 const ChatButtonText = styled(ComponentText)`

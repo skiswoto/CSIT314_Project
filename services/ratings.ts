@@ -1,11 +1,11 @@
 import { supabase } from '../libs/supabase';
 
 export interface ServiceRating {
-  id?: number;
+  id?: string; // Changed from number to string (UUID)
   listing_id: number; 
   rater_id: string; 
   rater_email: string; 
-  volunteer_name: string;
+  csr_rep_id: string;
   rating: number;
   created_at?: string;
 }
@@ -20,7 +20,7 @@ export const submitRating = async (ratingData: ServiceRating) => {
                     listing_id: ratingData.listing_id,
                     rater_id: ratingData.rater_id,
                     rater_email: ratingData.rater_email,
-                    volunteer_name: ratingData.volunteer_name,
+                    csr_rep_id: ratingData.csr_rep_id,
                     rating: ratingData.rating,
                 }
             ])
@@ -28,7 +28,6 @@ export const submitRating = async (ratingData: ServiceRating) => {
             .single();
 
         if (error) throw error;
-
         return { data, error: null };
     } catch (error: any) {
         console.error('Error submitting rating:', error);
@@ -36,14 +35,13 @@ export const submitRating = async (ratingData: ServiceRating) => {
     } 
 };
 
-// Get rating for a specific request
-export const getRatingByRequestId = async (requestId: number, userId: string) => {
+// Get rating for a specific listing (check if user already rated)
+export const getRatingByListingId = async (listingId: number, raterId: string) => {
     try {
         const { data, error } = await supabase
             .from('service_ratings')
             .select('*')
-            .eq('request_id', requestId)
-            .eq('rater_id', userId)
+            .eq('listing_id', listingId) 
             .single();
 
         if (error && error.code !== 'PGRST116') {
@@ -57,31 +55,41 @@ export const getRatingByRequestId = async (requestId: number, userId: string) =>
     }
 };
 
-// Get all ratings for a volunteer (for CSR Reps to view)
-export const getRatingByVolunteer = async (volunteerName: string) => {
-    try{
+// Get all ratings received by a CSR Rep
+export const getRatingsByCSRRep = async (csrRepId: string) => {
+    try {
         const { data, error } = await supabase
             .from('service_ratings')
-            .select('*')
-            .eq('volunteer_name', volunteerName)
+            .select(`
+                *,
+                Listings!inner(
+                    category,
+                    listing_date,
+                    description
+                ),
+                rater:Profiles!service_ratings_rater_id_rater_email_fkey(
+                    name,
+                    email
+                )
+            `)
+            .eq('csr_rep_id', csrRepId) 
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-
         return { data, error: null };
     } catch (error: any) {
-        console.error('Error fetching volunteer ratings:', error);
+        console.error('Error fetching CSR Rep ratings:', error);
         return { data: null, error: error.message };
     }
 };
 
-// Get average rating for a volunteer
-export const getAverageRating = async (volunteerName: string) => {
+// Get average rating for a CSR Rep
+export const getAverageRating = async (csrRepId: string) => {
     try {
         const { data, error } = await supabase
             .from('service_ratings')
             .select('rating')
-            .eq('volunteer_name', volunteerName);
+            .eq('csr_rep_id', csrRepId); 
 
         if (error) throw error;
 
@@ -100,5 +108,33 @@ export const getAverageRating = async (volunteerName: string) => {
     } catch (error: any) {
         console.error('Error calculating average rating:', error);
         return { average: 0, count: 0, error: error.message };
+    }
+};
+
+// Get all ratings given by a PIN (their rating history)
+export const getRatingsByRater = async (raterId: string) => {
+    try {
+        const { data, error } = await supabase
+            .from('service_ratings')
+            .select(`
+                *,
+                Listings!inner(
+                    category,
+                    listing_date,
+                    description
+                ),
+                csr_rep:Profiles!service_ratings_csr_rep_id_fkey(
+                    name,
+                    email
+                )
+            `)
+            .eq('rater_id', raterId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error: any) {
+        console.error('Error fetching rater ratings:', error);
+        return { data: null, error: error.message };
     }
 };

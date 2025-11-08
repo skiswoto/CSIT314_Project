@@ -1,7 +1,7 @@
 import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
 import { useCreateListingStore } from "@/global/createListingStore";
-import { supabase } from '@/libs/supabase';
-import { linkDocumentsToListing } from '@/services/documents';
+import { userAuthStore } from '@/global/userAuthStore';
+import { createListing, UploadedDocument } from '@/services/listings';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { Alert, StatusBar } from 'react-native';
@@ -27,6 +27,7 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
     } = useCreateListingStore()
     
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore()
+    const { user } = userAuthStore();
     const router = useRouter()
     
     const stepsArray = ([
@@ -37,75 +38,69 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
     ] as const)
     
     const handleNextStep = async () => {
-        const lastIndex = stepsArray.length - 1
+        const lastIndex = stepsArray.length - 1;
         
         if (currentStep >= lastIndex) {
             try {
-                // Create the listing first
-                const { data: listing, error: listingError } = await supabase
-                    .from('Listings')
-                    .insert({
-                        description: description,
-                        category: category,
-                        urgency: urgency,
-                        listing_date: date?.toISOString().split('T')[0],
-                        start_time: time?.toISOString(),
-                        duration: duration?.toISOString(),
-                        street_address: streetAddress,
-                        unit_level: unitLevel,
-                        building_name: buildingName,
-                        post_code: postCode,
-                    })
-                    .select()
-                    .single()
-                
-                if (listingError) {
-                    console.error('Listing creation error:', listingError)
-                    Alert.alert('Error', 'Failed to create listing. Please try again.')
-                    return
+                // Check if user is authenticated
+                if (!user?.id) {
+                    Alert.alert('Error', 'You must be logged in to create a listing.');
+                    return;
                 }
 
-                if (supportingDocuments && supportingDocuments.length > 0) {
-                    const documentUrls = supportingDocuments
-                        .map(doc => doc.url)
-                        .filter(Boolean) as string[]
-                    
-                    if (documentUrls.length > 0 && listing?.id) {
-                        const linked = await linkDocumentsToListing(documentUrls, listing.id)
-                        
-                        if (!linked) {
-                            console.warn('Some documents failed to link to listing')
-                            // Don't block the flow, just warn
-                        }
-                    }
-                }
+                // Convert duration to PostgreSQL interval format
+                // Adjust this based on how you store duration
+                const durationInterval = duration ? `${duration} minutes` : null;
                 
-                Alert.alert('Success', 'Listing created successfully!')
-                router.push('/(tabs)/home')
-                cancelProgress()
+                // Prepare listing data
+                const listingData = {
+                    description: description || '',
+                    category: category || '',
+                    urgency: urgency || '',
+                    listing_date: date?.toISOString().split('T')[0] || '',
+                    start_time: time?.toISOString() || '',
+                    duration: durationInterval,
+                    street_address: streetAddress || '',
+                    unit_level: unitLevel || '',
+                    building_name: buildingName || '',
+                    post_code: postCode || '',
+                    created_by: user.id,
+                };
                 
-            } catch (e) {
-                console.error('Error creating listing:', e)
-                Alert.alert('Error', 'Failed to create listing. Please try again.')
+                // Get document IDs
+                const documentIds = supportingDocuments
+                    ?.map(doc => (doc as UploadedDocument).id)
+                    .filter((id): id is string => !!id) || [];
+                
+                // Create listing with documents
+                const listing = await createListing(listingData, documentIds);
+                
+                Alert.alert('Success', 'Listing created successfully!');
+                router.push('/(tabs)/home');
+                cancelProgress();
+                
+            } catch (e: any) {
+                console.error('Error creating listing:', e);
+                Alert.alert('Error', e.message || 'Failed to create listing. Please try again.');
             }
-            return
+            return;
         }
         
-        const nextIndex = Math.min(currentStep + 1, lastIndex)
-        nextStep()
-        router.push(stepsArray[nextIndex])
-    }
+        const nextIndex = Math.min(currentStep + 1, lastIndex);
+        nextStep();
+        router.push(stepsArray[nextIndex]);
+    };
     
     const handlePreviousStep = () => {
-        if (currentStep <= 0) return
-        previousStep()
-        router.back()
-    }
+        if (currentStep <= 0) return;
+        previousStep();
+        router.back();
+    };
     
     const handleCancelCreateListing = () => {
-        cancelProgress()
-        router.replace('/(tabs)/home')
-    }
+        cancelProgress();
+        router.replace('/(tabs)/home');
+    };
     
     return (
         <>
@@ -129,10 +124,10 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                 </ScreenContainer>
             </SafeAreaViewContainer>
         </>
-    )
-}
+    );
+};
 
-export default CreateRequestFormTemplate
+export default CreateRequestFormTemplate;
 
 // Styled components remain the same
 const TopSection = styled.Pressable`
