@@ -4,14 +4,15 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StatusBar, TouchableOpacity } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
-import { supabase } from '../../libs/supabase';
 import { submitRating } from '../../services/ratings';
 
 const RateService = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
+
+    console.log('Received params:', params);
     
-    const { listingId, category } = params;
+    const { listingId, requestInfo, category } = params;
     
     const [rating, setRating] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,45 +28,22 @@ const RateService = () => {
         }
 
         setIsSubmitting(true);
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (!user) {
-                Alert.alert('Error', 'You must be logged in to submit a rating.');
-                return;
-            }
 
+        try {
             const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
             
-            if (!normalizedListingId) {
-                Alert.alert('Error', 'Invalid listing ID');
-                return;
-            }
-
-            // Fetch the listing to get the CSR Rep who completed it
-            const { data: listing, error: listingError } = await supabase
-                .from('Listings')
-                .select('completed_by')
-                .eq('id', Number(normalizedListingId))
-                .single();
-
-            if (listingError || !listing?.completed_by) {
-                Alert.alert('Error', 'Unable to find the CSR Rep who completed this service.');
+            if (!normalizedListingId || normalizedListingId === 'undefined') {
+                Alert.alert('Error', 'Invalid listing ID. Please try again.');
                 return;
             }
 
             console.log('Submitting rating:', {
                 listing_id: Number(normalizedListingId),
-                rater_id: user.id,
-                csr_rep_id: listing.completed_by,
                 rating: rating,
             });
 
             const { data, error } = await submitRating({
                 listing_id: Number(normalizedListingId),
-                rater_id: user.id,
-                rater_email: user.email || '',
-                csr_rep_id: listing.completed_by, // ✅ Added this
                 rating: rating,
             });
 
@@ -99,9 +77,7 @@ const RateService = () => {
                         {/* Header */}
                         <Header>
                             <HeaderTitle>Rate Your Experience</HeaderTitle>
-                            <HeaderSubtitle>
-                                How was the {category || 'service'}?
-                            </HeaderSubtitle>
+                            <HeaderSubtitle>How was the this service?</HeaderSubtitle>
                         </Header>
 
                         {/* Star Rating */}
@@ -155,7 +131,6 @@ const RateService = () => {
 
 export default RateService;
 
-/* Styled Components - unchanged */
 const Header = styled.View`
     margin-bottom: 24px;
 `;

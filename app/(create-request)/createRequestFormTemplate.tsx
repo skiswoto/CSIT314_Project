@@ -1,7 +1,7 @@
 import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
 import { useCreateListingStore } from "@/global/createListingStore";
 import { userAuthStore } from '@/global/userAuthStore';
-import { createListing, UploadedDocument } from '@/services/listings';
+import { supabase } from '@/libs/supabase';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { Alert, StatusBar } from 'react-native';
@@ -36,21 +36,22 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         '/(create-request)/(steps)/step3',
         '/(create-request)/(steps)/step4'
     ] as const)
+
+    const isLastStep = currentStep >= stepsArray.length - 1;
     
     const handleNextStep = async () => {
         const lastIndex = stepsArray.length - 1;
         
         if (currentStep >= lastIndex) {
             try {
-                // Check if user is authenticated
-                if (!user?.id) {
-                    Alert.alert('Error', 'You must be logged in to create a listing.');
-                    return;
-                }
-
-                // Convert duration to PostgreSQL interval format
-                // Adjust this based on how you store duration
-                const durationInterval = duration ? `${duration} minutes` : null;
+                const durationInterval = duration 
+                    ? (() => {
+                        const hours = duration.getHours();
+                        const minutes = duration.getMinutes();
+                        const totalMinutes = hours * 60 + minutes;
+                        return totalMinutes > 0 ? `${totalMinutes} minutes` : null;
+                        })()
+                    : null;
                 
                 // Prepare listing data
                 const listingData = {
@@ -64,16 +65,38 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                     unit_level: unitLevel || '',
                     building_name: buildingName || '',
                     post_code: postCode || '',
-                    created_by: user.id,
+                    created_by: user?.id,
+                    status: 'available'
                 };
                 
-                // Get document IDs
-                const documentIds = supportingDocuments
-                    ?.map(doc => (doc as UploadedDocument).id)
-                    .filter((id): id is string => !!id) || [];
+                // Create the listing
+                const { data: listing, error: listingError } = await supabase
+                    .from('Listings')
+                    .insert(listingData)
+                    .select()
+                    .single();
+            
+                if (listingError) {
+                    throw listingError;
+                }
                 
-                // Create listing with documents
-                const listing = await createListing(listingData, documentIds);
+                // Link documents to the listing
+                if (supportingDocuments && supportingDocuments.length > 0) {
+                    const documentUrls = supportingDocuments
+                        .map(doc => doc.url)
+                        .filter((url): url is string => !!url);
+                    
+                    if (documentUrls.length > 0) {
+                        const { error: updateError } = await supabase
+                            .from('supporting_documents')
+                            .update({ listing_id: listing.id })
+                            .in('document_url', documentUrls);
+                        
+                        if (updateError) {
+                            console.error('Error linking documents:', updateError);
+                        }
+                    }
+                }
                 
                 Alert.alert('Success', 'Listing created successfully!');
                 router.push('/(tabs)/home');
@@ -118,7 +141,7 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                             <PreviousText>back</PreviousText>
                         </Previous>
                         <Next onPress={handleNextStep}>
-                            <NextText>Next</NextText>
+                            <NextText>{isLastStep ? 'Submit' : 'Next'}</NextText>
                         </Next>
                     </BottomSection>
                 </ScreenContainer>
@@ -129,7 +152,6 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
 
 export default CreateRequestFormTemplate;
 
-// Styled components remain the same
 const TopSection = styled.Pressable`
     justify-content: flex-start;
     width: 20%;
