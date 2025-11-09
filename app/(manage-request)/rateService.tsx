@@ -3,15 +3,17 @@ import { Star } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StatusBar, TouchableOpacity } from 'react-native';
 import { styled } from 'styled-components/native';
-import { SafeAreaViewContainer, ScrollContainer } from '../constants/GlobalStyles';
-import { supabase } from '../libs/supabase';
-import { submitRating } from './ratings';
+import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
+import { submitRating } from '../../services/ratings';
 
 const RateService = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { requestId, volunteerName } = params;
 
+    console.log('Received params:', params);
+    
+    const { listingId, requestInfo, category } = params;
+    
     const [rating, setRating] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,18 +28,22 @@ const RateService = () => {
         }
 
         setIsSubmitting(true);
+
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                Alert.alert('Error', 'You must be logged in to submit a rating.');
+            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+            
+            if (!normalizedListingId || normalizedListingId === 'undefined') {
+                Alert.alert('Error', 'Invalid listing ID. Please try again.');
                 return;
             }
 
+            console.log('Submitting rating:', {
+                listing_id: Number(normalizedListingId),
+                rating: rating,
+            });
+
             const { data, error } = await submitRating({
-                listing_id: Number(requestId),
-                rater_id: user.id,
-                rater_email: user.email || '',
-                volunteer_name: volunteerName as string,
+                listing_id: Number(normalizedListingId),
                 rating: rating,
             });
 
@@ -53,7 +59,7 @@ const RateService = () => {
             ]);
         } catch (error: any) {
             console.error('Rating submission error:', error);
-            Alert.alert('Submission Error', 'Unable to submit review. Please try again later.');
+            Alert.alert('Submission Error', error.message || 'Unable to submit review. Please try again later.');
         } finally {
             setIsSubmitting(false);
         }
@@ -71,9 +77,7 @@ const RateService = () => {
                         {/* Header */}
                         <Header>
                             <HeaderTitle>Rate Your Experience</HeaderTitle>
-                            <HeaderSubtitle>
-                                Help us improve by sharing your feedback
-                            </HeaderSubtitle>
+                            <HeaderSubtitle>How was the this service?</HeaderSubtitle>
                         </Header>
 
                         {/* Star Rating */}
@@ -118,8 +122,6 @@ const RateService = () => {
                                 </ButtonText>
                             </SubmitButton>
                         </ButtonsContainer>
-
-
                     </ScrollContainer>
                 </KeyboardAvoidingView>
             </SafeAreaViewContainer>
@@ -129,7 +131,6 @@ const RateService = () => {
 
 export default RateService;
 
-/* Styled Components */
 const Header = styled.View`
     margin-bottom: 24px;
 `;

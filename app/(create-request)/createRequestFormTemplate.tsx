@@ -1,7 +1,7 @@
 import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
 import { useCreateListingStore } from "@/global/createListingStore";
+import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
-import { linkDocumentsToListing } from '@/services/documents';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { Alert, StatusBar } from 'react-native';
@@ -27,6 +27,7 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
     } = useCreateListingStore()
     
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore()
+    const { user } = userAuthStore();
     const router = useRouter()
     
     const stepsArray = ([
@@ -35,77 +36,94 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         '/(create-request)/(steps)/step3',
         '/(create-request)/(steps)/step4'
     ] as const)
+
+    const isLastStep = currentStep >= stepsArray.length - 1;
     
     const handleNextStep = async () => {
-        const lastIndex = stepsArray.length - 1
+        const lastIndex = stepsArray.length - 1;
         
         if (currentStep >= lastIndex) {
             try {
-                // Create the listing first
+                const durationInterval = duration 
+                    ? (() => {
+                        const hours = duration.getHours();
+                        const minutes = duration.getMinutes();
+                        const totalMinutes = hours * 60 + minutes;
+                        return totalMinutes > 0 ? `${totalMinutes} minutes` : null;
+                        })()
+                    : null;
+                
+                // Prepare listing data
+                const listingData = {
+                    description: description || '',
+                    category: category || '',
+                    urgency: urgency || '',
+                    listing_date: date?.toISOString().split('T')[0] || '',
+                    start_time: time?.toISOString() || '',
+                    duration: durationInterval,
+                    street_address: streetAddress || '',
+                    unit_level: unitLevel || '',
+                    building_name: buildingName || '',
+                    post_code: postCode || '',
+                    created_by: user?.id,
+                    status: 'available'
+                };
+                
+                // Create the listing
                 const { data: listing, error: listingError } = await supabase
                     .from('Listings')
-                    .insert({
-                        description: description,
-                        category: category,
-                        urgency: urgency,
-                        listing_date: date?.toISOString().split('T')[0],
-                        start_time: time?.toISOString(),
-                        duration: duration?.toISOString(),
-                        street_address: streetAddress,
-                        unit_level: unitLevel,
-                        building_name: buildingName,
-                        post_code: postCode,
-                    })
+                    .insert(listingData)
                     .select()
-                    .single()
-                
+                    .single();
+            
                 if (listingError) {
-                    console.error('Listing creation error:', listingError)
-                    Alert.alert('Error', 'Failed to create listing. Please try again.')
-                    return
+                    throw listingError;
                 }
-
+                
+                // Link documents to the listing
                 if (supportingDocuments && supportingDocuments.length > 0) {
                     const documentUrls = supportingDocuments
                         .map(doc => doc.url)
-                        .filter(Boolean) as string[]
+                        .filter((url): url is string => !!url);
                     
-                    if (documentUrls.length > 0 && listing?.id) {
-                        const linked = await linkDocumentsToListing(documentUrls, listing.id)
+                    if (documentUrls.length > 0) {
+                        const { error: updateError } = await supabase
+                            .from('supporting_documents')
+                            .update({ listing_id: listing.id })
+                            .in('document_url', documentUrls);
                         
-                        if (!linked) {
-                            console.warn('Some documents failed to link to listing')
-                            // Don't block the flow, just warn
+                        if (updateError) {
+                            console.error('Error linking documents:', updateError);
                         }
                     }
                 }
                 
-                Alert.alert('Success', 'Listing created successfully!')
-                router.push('/(tabs)/home')
-                cancelProgress()
+                Alert.alert('Success', 'Listing created successfully!');
+                router.push('/(tabs)/home');
+                cancelProgress();
                 
-            } catch (e) {
-                console.error('Error creating listing:', e)
-                Alert.alert('Error', 'Failed to create listing. Please try again.')
+            } catch (e: any) {
+                console.error('Error creating listing:', e);
+                Alert.alert('Error', e.message || 'Failed to create listing. Please try again.');
             }
-            return
+            return;
         }
         
-        const nextIndex = Math.min(currentStep + 1, lastIndex)
-        nextStep()
-        router.push(stepsArray[nextIndex])
-    }
+        const nextIndex = Math.min(currentStep + 1, lastIndex);
+        nextStep();
+        router.push(stepsArray[nextIndex]);
+    };
     
     const handlePreviousStep = () => {
-        if (currentStep <= 0) return
-        previousStep()
-        router.back()
-    }
+        if (currentStep <= 0) return;
+        previousStep();
+        router.back();
+    };
     
     const handleCancelCreateListing = () => {
-        cancelProgress()
-        router.replace('/(tabs)/home')
-    }
+        cancelProgress();
+        router.replace('/(tabs)/home');
+    };
     
     return (
         <>
@@ -123,18 +141,17 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                             <PreviousText>back</PreviousText>
                         </Previous>
                         <Next onPress={handleNextStep}>
-                            <NextText>Next</NextText>
+                            <NextText>{isLastStep ? 'Submit' : 'Next'}</NextText>
                         </Next>
                     </BottomSection>
                 </ScreenContainer>
             </SafeAreaViewContainer>
         </>
-    )
-}
+    );
+};
 
-export default CreateRequestFormTemplate
+export default CreateRequestFormTemplate;
 
-// Styled components remain the same
 const TopSection = styled.Pressable`
     justify-content: flex-start;
     width: 20%;
