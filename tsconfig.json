@@ -1,25 +1,11 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "commonjs",
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
-    "jsx": "react-jsx",
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "types": ["jest", "node", "react"],
+    "lib": ["ES6", "DOM"],
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types"
-    ],
-    "types": [
-      "node",
-      "jest",
-      "react"
-    ],
+    "jsx": "react-jsx",
     "paths": {
       "@/*": [
         "./*"
@@ -27,15 +13,12 @@
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "__tests__/**/*.ts",
-    "__tests__/**/*.tsx",
-    ".expo/types/**/*.ts",
+    "/*.ts",
+    "/*.tsx",
+    ".expo/types//*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
-    "supabase/functions/**"
-  ],
-  "extends": "expo/tsconfig.base"
+    "supabase/functions/"
+  ]
 }
