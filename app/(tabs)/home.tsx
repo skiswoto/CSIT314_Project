@@ -12,6 +12,7 @@ import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
 
+
 const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
@@ -209,19 +210,24 @@ const Home = () => {
                   </CategoryBadge>
 
                   <CardActions>
-                    {/* SAVE / UNSAVE */}
-                    <ActionButton onPress={() => handleToggleSave(listing.id)}>
-                      <Heart
-                        size={20}
-                        color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
-                        fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
-                      />
-                    </ActionButton>
+  <ActionButton
+    onPress={async () => {
+      try {
+        const res = await toggleSave(listing.id);
+        console.log(`[save] listing ${listing.id} → saved=${res.saved}`);
+      } catch (e) {
+        console.error('[save] failed:', e);
+      }
+    }}
+  >
+    <Heart size={20} color="#6B7280" />
+  </ActionButton>
 
-                    <ActionButton>
-                      <MoveRight size={20} color="#6B7280" />
-                    </ActionButton>
-                  </CardActions>
+  <ActionButton>
+    <MoveRight size={20} color="#6B7280" />
+  </ActionButton>
+</CardActions>
+
                 </CardHeader>
 
                 <CardBody>
