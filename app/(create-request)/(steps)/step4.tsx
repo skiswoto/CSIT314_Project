@@ -1,7 +1,7 @@
 import { StepSubTitle, StepTitle } from "@/constants/createRequestFormStyles";
 import { useCreateListingStore } from "@/global/createListingStore";
 import { userAuthStore } from "@/global/userAuthStore"; // Import userAuthStore
-import { getDocumentSignedUrl, saveDocumentRecord, uploadDocument, UploadedDocument } from '@/services/documents';
+import { getDocumentSignedUrl, saveDocumentRecord, uploadDocument, UploadedDocument } from '@/services/listings';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";

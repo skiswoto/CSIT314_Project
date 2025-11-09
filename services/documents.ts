@@ -30,15 +30,12 @@ export const uploadDocument = async (
         
         console.log('Uploading to path:', filePath);
         
-        // For React Native, we need to create a FormData-like object
-        // Supabase accepts ArrayBuffer or File-like objects
         const fileData = {
             uri: file.uri,
             type: file.type,
             name: fileName,
         };
         
-        // Use fetch to get the file as arrayBuffer
         const response = await fetch(file.uri);
         const arrayBuffer = await response.arrayBuffer();
         
@@ -92,7 +89,7 @@ export const saveDocumentRecord = async (
             .insert({
                 listing_id: listingId || null,
                 document_url: documentUrl,
-                user_id: userId,
+                uploaded_by: userId,
             });
         
         if (error) {

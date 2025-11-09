@@ -1,15 +1,17 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Calendar, CheckCircle, Clock, Download, Heart, MapPin, TrendingUp } from 'lucide-react-native';
-import { useState } from 'react'; // Add if not already there
+import { ArrowLeft, Calendar, CheckCircle, Clock, Download, FileText, Heart, MapPin, Star, TrendingUp } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { Alert, Image, ImageBackground, ScrollView, StyleSheet } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import { supabase } from '../../libs/supabase';
 import { sendListingAcceptedEmail } from '../../services/emailNotifications';
 import { acceptListing } from '../../services/listings';
+import DocumentViewer from './viewDocs';
 
 const SampleListing = () => {
-    const router = useRouter()
-    const params = useLocalSearchParams()
+    const router = useRouter();
+    const params = useLocalSearchParams();
     
     const {
         listingId,
@@ -20,11 +22,80 @@ const SampleListing = () => {
         duration,
         urgency,
         status
-    } = params
+    } = params;
     
-    const isCompleted = status === 'completed'
+    const isCompleted = status === 'completed';
+    const [isAccepting, setIsAccepting] = useState(false);
+    const [showDocuments, setShowDocuments] = useState(false);
+    const [documentCount, setDocumentCount] = useState(0);
+    const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+    const [userRole, setUserRole] = useState<string>('');
+    const [existingRating, setExistingRating] = useState<number | null>(null);
     
-    console.log('Listing Detail Params:', params)
+    useEffect(() => {
+        loadDocumentCount();
+        loadUserRoleAndRating();
+    }, [listingId]);
+    
+    const loadDocumentCount = async () => {
+        try {
+            setIsLoadingDocs(true);
+            
+            if (!listingId) {
+                setIsLoadingDocs(false);
+                return;
+            }
+            
+            const { data, error } = await supabase
+                .from('supporting_documents')
+                .select('*')
+                .eq('listing_id', listingId);
+            
+            if (error) {
+                console.error('Error loading documents:', error);
+                setIsLoadingDocs(false);
+                return;
+            }
+            
+            setDocumentCount(data?.length || 0);
+        } catch (error) {
+            console.error('Exception loading document count:', error);
+        } finally {
+            setIsLoadingDocs(false);
+        }
+    };
+    
+    const loadUserRoleAndRating = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            
+            const { data: profile } = await supabase
+                .from('Profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+            
+            const role = profile?.role?.toLowerCase() || '';
+            setUserRole(role);
+            
+            if (role === 'csr_rep' || role === 'platform_manager') {
+                const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+                
+                const { data: ratingData } = await supabase
+                    .from('service_ratings')
+                    .select('rating')
+                    .eq('listing_id', normalizedListingId)
+                    .maybeSingle();
+                
+                if (ratingData) {
+                    setExistingRating(ratingData.rating);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading user role and rating:', error);
+        }
+    };
     
     const getUrgencyColor = (urgency: string | string[] | undefined) => {
         if (!urgency) return '#F3F4F6';
@@ -35,7 +106,7 @@ const SampleListing = () => {
             case 'Low': return '#DCFCE7';
             default: return '#F3F4F6';
         }
-    }
+    };
     
     const getUrgencyTextColor = (urgency: string | string[] | undefined) => {
         if (!urgency) return '#6B7280';
@@ -46,8 +117,8 @@ const SampleListing = () => {
             case 'Low': return '#166534';
             default: return '#6B7280';
         }
-    }
-
+    };
+    
     const formatTime = (time: string | string[] | undefined) => {
         if (!time) return 'Not specified';
         const timeStr = Array.isArray(time) ? time[0] : time;
@@ -56,12 +127,10 @@ const SampleListing = () => {
         const ampm = hour >= 12 ? 'PM' : 'AM';
         const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
         return `${displayHour}:${minutes} ${ampm}`;
-    }
-
+    };
+    
     const handleExportData = async () => {
-        // Create CSV-like data
-        const data = `
-Service Report
+        const data = `Service Report
 --------------
 Category: ${category}
 Description: ${description}
@@ -69,57 +138,56 @@ Address: ${address}
 Start Time: ${formatTime(startTime)}
 Duration: ${duration} hours
 Urgency: ${urgency}
-Status: ${status}
-        `.trim();
-
-        Alert.alert('Export Data', data, [
-            { text: 'OK' }
-        ]);
-    }
-
-    const [isAccepting, setIsAccepting] = useState(false)
-
+Status: ${status}`.trim();
+        
+        Alert.alert('Export Data', data, [{ text: 'OK' }]);
+    };
+    
     const handleAcceptListing = async () => {
-    try {
-        setIsAccepting(true)
-        
-        // Normalize the listing ID
-        const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId
-        
-        if (!normalizedListingId) {
-        Alert.alert('Error', 'Invalid listing ID')
-        return
+        try {
+            setIsAccepting(true);
+            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+            
+            if (!normalizedListingId) {
+                Alert.alert('Error', 'Invalid listing ID');
+                return;
+            }
+            
+            await acceptListing(normalizedListingId);
+            
+            await sendListingAcceptedEmail({
+                listingId: normalizedListingId,
+                category: (Array.isArray(category) ? category[0] : category) || 'N/A',
+                description: (Array.isArray(description) ? description[0] : description) || 'N/A',
+                address: (Array.isArray(address) ? address[0] : address) || 'N/A',
+                startTime: (Array.isArray(startTime) ? startTime[0] : startTime) || 'N/A',
+                duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A'
+            });
+            
+            Alert.alert(
+                'Success',
+                'Listing accepted! Email sent to kiswotoshawn@gmail.com',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+            
+        } catch (error) {
+            console.error('Error accepting listing:', error);
+            Alert.alert('Error', 'Failed to accept listing. Please try again.');
+        } finally {
+            setIsAccepting(false);
         }
-        
-        console.log('🚀 Accepting listing:', normalizedListingId)
-        
-        // Update database
-        await acceptListing(normalizedListingId)
-        
-        // Send email
-        await sendListingAcceptedEmail({
-        listingId: normalizedListingId,
-        category: (Array.isArray(category) ? category[0] : category) || 'N/A',
-        description: (Array.isArray(description) ? description[0] : description) || 'N/A',
-        address: (Array.isArray(address) ? address[0] : address) || 'N/A',
-        startTime: (Array.isArray(startTime) ? startTime[0] : startTime) || 'N/A',
-        duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A'
-        })
-        
-        Alert.alert(
-        '✅ Success!',
-        'Listing accepted! Email sent to kiswotoshawn@gmail.com',
-        [{ text: 'OK', onPress: () => router.back() }]
-        )
-        
-    } catch (error) {
-        console.error('❌ Error:', error)
-        Alert.alert('Error', 'Failed to accept listing. Please try again.')
-    } finally {
-        setIsAccepting(false)
-    }
-    }
-
+    };
+    
+    const handleRateService = () => {
+        router.push({
+            pathname: '/(manage-request)/rateService',
+            params: {
+                listingId: Array.isArray(listingId) ? listingId[0] : listingId,
+                category: Array.isArray(category) ? category[0] : category,
+            }
+        });
+    };
+    
     return (
         <SafeAreaViewContainer>
             <ScrollView 
@@ -141,7 +209,7 @@ Status: ${status}
                         </IconContainer>
                     </TopBar>
                 </ImageBackground>
-
+                
                 <Card>
                     <CategoryRow>
                         <Category backgroundColor="#DBEAFE">
@@ -166,16 +234,25 @@ Status: ${status}
                             </Category>
                         )}
                     </CategoryRow>
-
+                    
                     <ListingTitle>
                         {category || 'Service Request'}
                     </ListingTitle>
-
+                    
                     <ListingDescription>
                         {description || 'No description provided.'}
                     </ListingDescription>
-
-                    {/* INSIGHTS SECTION FOR COMPLETED LISTINGS */}
+                    
+                    <DocumentButton onPress={() => setShowDocuments(true)}>
+                        <FileText size={20} color="#4F46E5" />
+                        <DocumentButtonText>
+                            {isLoadingDocs 
+                                ? 'Loading documents...' 
+                                : `View Documents (${documentCount})`
+                            }
+                        </DocumentButtonText>
+                    </DocumentButton>
+                    
                     {isCompleted && (
                         <InsightsSection>
                             <SectionHeader>
@@ -191,7 +268,7 @@ Status: ${status}
                                     <InsightLabel>Status</InsightLabel>
                                     <InsightValue>Completed</InsightValue>
                                 </InsightCard>
-
+                                
                                 <InsightCard>
                                     <InsightIcon>
                                         <Clock size={24} color="#2563EB" />
@@ -201,7 +278,7 @@ Status: ${status}
                                         {duration ? `${Array.isArray(duration) ? duration[0] : duration} hrs` : 'N/A'}
                                     </InsightValue>
                                 </InsightCard>
-
+                                
                                 <InsightCard>
                                     <InsightIcon>
                                         <Calendar size={24} color="#7C3AED" />
@@ -209,7 +286,7 @@ Status: ${status}
                                     <InsightLabel>Start Time</InsightLabel>
                                     <InsightValue>{formatTime(startTime)}</InsightValue>
                                 </InsightCard>
-
+                                
                                 <InsightCard>
                                     <InsightIcon>
                                         <MapPin size={24} color="#DC2626" />
@@ -220,15 +297,14 @@ Status: ${status}
                                     </InsightValue>
                                 </InsightCard>
                             </InsightsGrid>
-
+                            
                             <ExportButton onPress={handleExportData}>
                                 <Download size={20} color="#ffffff" />
                                 <ExportButtonText>Export Service Data</ExportButtonText>
                             </ExportButton>
                         </InsightsSection>
                     )}
-
-                    {/* REGULAR DETAILS SECTION FOR AVAILABLE LISTINGS */}
+                    
                     {!isCompleted && (
                         <DetailsSection>
                             {address && (
@@ -237,14 +313,14 @@ Status: ${status}
                                     <DetailText>{Array.isArray(address) ? address[0] : address}</DetailText>
                                 </DetailRow>
                             )}
-
+                            
                             {startTime && (
                                 <DetailRow>
                                     <Clock size={18} color="#6B7280" />
                                     <DetailText>Starts at {formatTime(startTime)}</DetailText>
                                 </DetailRow>
                             )}
-
+                            
                             {duration && (
                                 <DetailRow>
                                     <Calendar size={18} color="#6B7280" />
@@ -255,7 +331,7 @@ Status: ${status}
                             )}
                         </DetailsSection>
                     )}
-
+                    
                     <Row>
                         <Image 
                             source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }} 
@@ -266,7 +342,7 @@ Status: ${status}
                             <ChatButtonText>Chat now</ChatButtonText>
                         </ChatButton>
                     </Row>
-
+                    
                     <ApplyButton 
                         disabled={isCompleted || isAccepting}
                         onPress={handleAcceptListing}
@@ -280,13 +356,52 @@ Status: ${status}
                             }
                         </ApplyButtonText>
                     </ApplyButton>
+                    
+                    {isCompleted && (
+                        <>
+                            {userRole === 'pin' && (
+                                <RateServiceButton onPress={handleRateService}>
+                                    <Star size={20} color="#FBBF24" fill="#FBBF24" />
+                                    <RateServiceButtonText>Rate Service</RateServiceButtonText>
+                                </RateServiceButton>
+                            )}
+                            
+                            {(userRole === 'csr_rep' || userRole === 'platform_manager') && (
+                                <RatingDisplayContainer>
+                                    <RatingLabel>Service Rating</RatingLabel>
+                                    {existingRating ? (
+                                        <StarsRow>
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star
+                                                    key={star}
+                                                    size={28}
+                                                    color="#FCD34D"
+                                                    fill={star <= existingRating ? '#FCD34D' : 'transparent'}
+                                                    strokeWidth={2}
+                                                />
+                                            ))}
+                                            <RatingText>{existingRating}/5</RatingText>
+                                        </StarsRow>
+                                    ) : (
+                                        <NoRatingText>Not yet rated</NoRatingText>
+                                    )}
+                                </RatingDisplayContainer>
+                            )}
+                        </>
+                    )}
                 </Card>
             </ScrollView>
+            
+            <DocumentViewer
+                listingId={Array.isArray(listingId) ? listingId[0] : listingId || ''}
+                visible={showDocuments}
+                onClose={() => setShowDocuments(false)}
+            />
         </SafeAreaViewContainer>
-    )
-}
+    );
+};
 
-export default SampleListing
+export default SampleListing;
 
 const styles = StyleSheet.create({
     backgroundImage: {
@@ -298,7 +413,7 @@ const styles = StyleSheet.create({
         height: 50,
         borderRadius: 25,
     }
-})
+});
 
 const Card = styled.View`
     background-color: #ffffff;
@@ -308,67 +423,101 @@ const Card = styled.View`
     padding-horizontal: 20px;
     padding-vertical: 20px;
     margin-top: -40px;
-`
+`;
 
 const ApplyButton = styled.TouchableOpacity`
     background-color: #111827;
     border-radius: 24px;
-    overflow: hidden;
     padding-horizontal: 14px;
     padding-vertical: 18px;
-`
+`;
+
+const RateServiceButton = styled.TouchableOpacity`
+    background-color: #FEF3C7;
+    border-radius: 24px;
+    padding-horizontal: 14px;
+    padding-vertical: 18px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-width: 2px;
+    border-color: #FBBF24;
+    margin-top: 20px;
+`;
 
 const ChatButton = styled.Pressable`
     background-color: #F2F2F2;
     border-radius: 24px;
-    overflow: hidden;
     padding-horizontal: 20px;
     padding-vertical: 14px;
-`
+`;
+
+const DocumentButton = styled.TouchableOpacity`
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #EEF2FF;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border-width: 1.5px;
+    border-color: #4F46E5;
+`;
 
 const Category = styled.View<{ backgroundColor?: string }>`
     background-color: ${props => props.backgroundColor || '#F5F5F5'};
     border-radius: 20px;
-    overflow: hidden;
     padding-horizontal: 12px;
     padding-vertical: 8px;
     margin-right: 8px;
-`
+`;
 
 const IconContainer = styled.Pressable`
     background-color: #ffffff;
     border-radius: 50px;
-    overflow: hidden;
     padding: 6px;
-`
+`;
 
-const ComponentText = styled.Text`
-    align-self: center;
-`
-
-const ApplyButtonText = styled(ComponentText)`
+const ApplyButtonText = styled.Text`
     font-weight: 600;
     font-size: 20px;
     color: #ffffff;
-`
+    align-self: center;
+`;
 
-const ChatButtonText = styled(ComponentText)`
+const RateServiceButtonText = styled.Text`
+    font-weight: 600;
+    font-size: 20px;
+    color: #92400E;
+    align-self: center;
+`;
+
+const ChatButtonText = styled.Text`
     font-weight: 600;
     font-size: 14px;
-`
+    align-self: center;
+`;
+
+const DocumentButtonText = styled.Text`
+    color: #4F46E5;
+    font-size: 14px;
+    font-weight: 600;
+`;
 
 const CategoryText = styled.Text<{ color?: string }>`
     font-weight: 600;
     font-size: 12px;
     align-self: center;
     color: ${props => props.color || '#6B7280'};
-`
+`;
 
 const ListingTitle = styled.Text`
     font-weight: 600;
     font-size: 24px;
     margin-bottom: 14px;
-`
+`;
 
 const ListingDescription = styled.Text`
     font-weight: 400;
@@ -376,7 +525,7 @@ const ListingDescription = styled.Text`
     color: #636363;
     margin-bottom: 20px;
     line-height: 22px;
-`
+`;
 
 const TopBar = styled.View`
     flex-direction: row;
@@ -384,7 +533,7 @@ const TopBar = styled.View`
     align-items: center;
     margin-top: 70px;
     margin-horizontal: 20px;
-`
+`;
 
 const CategoryRow = styled.View`
     width: 100%;
@@ -392,41 +541,41 @@ const CategoryRow = styled.View`
     margin-bottom: 20px;
     align-items: center;
     flex-wrap: wrap;
-`
+`;
 
 const Row = styled.View`
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-`
+`;
 
 const InsightsSection = styled.View`
     background-color: #F9FAFB;
     border-radius: 16px;
     padding: 20px;
     margin-bottom: 20px;
-`
+`;
 
 const SectionHeader = styled.View`
     flex-direction: row;
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
-`
+`;
 
 const SectionTitle = styled.Text`
     font-size: 18px;
     font-weight: 600;
     color: #111827;
-`
+`;
 
 const InsightsGrid = styled.View`
     flex-direction: row;
     flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 16px;
-`
+`;
 
 const InsightCard = styled.View`
     background-color: #FFFFFF;
@@ -436,11 +585,11 @@ const InsightCard = styled.View`
     border-width: 1px;
     border-color: #E5E7EB;
     align-items: center;
-`
+`;
 
 const InsightIcon = styled.View`
     margin-bottom: 8px;
-`
+`;
 
 const InsightLabel = styled.Text`
     font-size: 12px;
@@ -448,14 +597,14 @@ const InsightLabel = styled.Text`
     font-weight: 500;
     margin-bottom: 4px;
     text-align: center;
-`
+`;
 
 const InsightValue = styled.Text`
     font-size: 16px;
     font-weight: 700;
     color: #111827;
     text-align: center;
-`
+`;
 
 const ExportButton = styled.TouchableOpacity`
     flex-direction: row;
@@ -465,28 +614,63 @@ const ExportButton = styled.TouchableOpacity`
     background-color: #2563EB;
     padding: 14px;
     border-radius: 12px;
-`
+`;
 
 const ExportButtonText = styled.Text`
     color: #ffffff;
     font-size: 16px;
     font-weight: 600;
-`
+`;
 
 const DetailsSection = styled.View`
     margin-bottom: 20px;
     gap: 12px;
-`
+`;
 
 const DetailRow = styled.View`
     flex-direction: row;
     align-items: center;
     gap: 8px;
-`
+`;
 
 const DetailText = styled.Text`
     font-size: 14px;
     color: #6B7280;
     font-weight: 500;
     flex: 1;
-`
+`;
+
+const RatingDisplayContainer = styled.View`
+    background-color: #FEF3C7;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    border-width: 2px;
+    border-color: #FBBF24;
+`;
+
+const RatingLabel = styled.Text`
+    font-size: 16px;
+    font-weight: 600;
+    color: #92400E;
+    margin-bottom: 12px;
+`;
+
+const StarsRow = styled.View`
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+`;
+
+const RatingText = styled.Text`
+    font-size: 20px;
+    font-weight: 700;
+    color: #92400E;
+    margin-left: 8px;
+`;
+
+const NoRatingText = styled.Text`
+    font-size: 14px;
+    color: #92400E;
+    font-style: italic;
+`;

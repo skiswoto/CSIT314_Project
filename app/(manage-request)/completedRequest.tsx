@@ -1,13 +1,13 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { AlertCircle, CheckCircle, LayoutList, MapPin, Menu, Search, SlidersHorizontal, SquarePen, Star } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 import { supabase } from '../../libs/supabase';
-import { getRatingByRequestId } from '../../services/ratings';
+import { getRatingByListingId } from '../../services/ratings';
 
-// Define the request type
 interface Request {
   id: number;
   pinName: string;
@@ -17,74 +17,126 @@ interface Request {
   completedDate: string;
   isRated?: boolean;
   rating?: number | null;
+  pinUserId?: string;
+  listingId?: number;
 }
 
 const CompletedRequestScreen = () => {
   const router = useRouter();
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>('');
 
-  useEffect(() => {
-    loadCompletedRequests();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadCompletedRequests();
+    }, [])
+  );
 
   const loadCompletedRequests = async () => {
     try {
-      // Get current user
+      setLoading(true);
+      
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (!user) {
+        console.log(' No user found');
         setLoading(false);
         return;
       }
 
-      // Fetch completed requests from your database
-      // REPLACE 'requests' with your actual table name
-      // REPLACE the column names with your actual column names
-      const { data: completedRequests, error } = await supabase
-        .from('requests') // Replace with your table name
-        .select('*')
-        .eq('status', 'completed') // Assuming you have a status field
-        .eq('pin_user_id', user.id); // Fetch requests for current user
+      // Get user role from Profiles table
+      const { data: profile } = await supabase
+        .from('Profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
+      const role = profile?.role?.toLowerCase() || '';
+      setUserRole(role);
+      console.log('👤 User Role in completedRequest:', role);
+
+      // Build query based on role - Query from Listings table directly
+      let query = supabase
+        .from('Listings')
+        .select(`
+          *,
+          creator:Profiles!Listings_created_by_fkey(name)
+        `)
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: false }); // Latest first
+      
+      // If PIN user, only show their own listings
+      if (role === 'pin') {
+        query = query.eq('created_by', user.id);
+      }
+      
+      const { data: completedRequests, error } = await query;
+      
+      console.log(' Completed requests fetched:', completedRequests?.length);
+      
       if (error) {
-        console.error('Error fetching completed requests:', error);
+        console.error(' Error fetching completed requests:', error);
         setLoading(false);
         return;
       }
 
       if (!completedRequests || completedRequests.length === 0) {
+        console.log(' No completed requests found');
         setRequests([]);
         setLoading(false);
         return;
       }
 
-      // Check ratings for each request
+      // Check ratings for each listing - fetch fresh data every time
       const updatedRequests = await Promise.all(
-        completedRequests.map(async (request: any) => {
-          const { data: rating } = await getRatingByRequestId(request.id, user.id);
+        completedRequests.map(async (listing: any) => {
+          console.log(` Processing listing ${listing.id} for role: ${role}`);
           
-          // Map your database fields to the Request interface
+          // Always fetch the latest rating from database
+          const { data: rating } = role === 'pin' 
+            ? await getRatingByListingId(listing.id, user.id)
+            : await getRatingByListingId(listing.id);
+          
+          console.log(` Listing ${listing.id}: Rating data =`, rating);
+          
+          // Format the address from the listing fields
+          const addressParts = [
+            listing.street_address,
+            listing.unit_level,
+            listing.building_name,
+            listing.post_code
+          ].filter(Boolean);
+          
           return {
-            id: request.id,
-            pinName: request.pin_name || 'Unknown', 
-            location: request.location || 'Unknown',
-            urgency: request.urgency || 'Low',
-            requestInfo: request.request_info || request.description || '', // Replace with your field name
-            completedDate: request.completed_date || request.updated_at || new Date().toISOString(),
+            id: listing.id,
+            pinName: listing.creator?.name || 'Unknown User', 
+            location: addressParts.length > 0 ? addressParts.join(', ') : 'Unknown',
+            urgency: listing.urgency || 'Low',
+            requestInfo: listing.description || '',
+            completedDate: listing.updated_at || listing.created_at || new Date().toISOString(),
             isRated: !!rating,
             rating: rating?.rating || null,
+            pinUserId: listing.created_by,
+            listingId: listing.id,
           };
         })
       );
-
+      
+      console.log(' Final requests:', updatedRequests.map(r => ({ 
+        id: r.id, 
+        isRated: r.isRated, 
+        rating: r.rating 
+      })));
+      
       setRequests(updatedRequests);
     } catch (error) {
-      console.error('Error loading completed requests:', error);
+      console.error(' Error loading completed requests:', error);
     } finally {
       setLoading(false);
     }
   };
-
+  
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case 'High': return '#FEE2E2';
@@ -163,7 +215,7 @@ const CompletedRequestScreen = () => {
             /* Scrollable Results List */
             requests.map((request) => (
               <ResultCard key={request.id}>
-                {/* Top Row: CSR Logo and Profile */}
+                {/* Top Row: Name and Rating Badge */}
                 <TopRow>
                   <NameContainer>
                     <PinName>{request.pinName}</PinName>
@@ -194,42 +246,64 @@ const CompletedRequestScreen = () => {
                 {/* Request Info */}
                 <RequestInfo>{request.requestInfo}</RequestInfo>
 
-                {/* Conditional buttons based on rating status */}
-                {request.isRated ? (
-                  // Already rated - show view button
-                  <ViewMatchButton>
-                    <ViewMatchButtonText>View Rating</ViewMatchButtonText>
-                  </ViewMatchButton>
+                {/* Conditional display based on role */}
+                {userRole === 'pin' ? (
+                  // PIN users can rate
+                  request.isRated ? (
+                    <ViewMatchButton>
+                      <ViewMatchButtonText>View Rating</ViewMatchButtonText>
+                    </ViewMatchButton>
+                  ) : (
+                    <RateServiceButton
+                      onPress={() => router.push({
+                        pathname: '/(manage-request)/rateService' as any,
+                        params: {
+                          listingId: request.listingId?.toString() || request.id.toString(),
+                          requestInfo: request.requestInfo,
+                          category: 'Service'
+                        }
+                      })}
+                    >
+                      <Star size={18} color="#FFFFFF" />
+                      <RateServiceButtonText>Rate This Service</RateServiceButtonText>
+                    </RateServiceButton>
+                  )
                 ) : (
-                  // Not rated - show rate button that navigates to rateService
-                  <RateServiceButton
-                    onPress={() => router.push({
-                      pathname: '/(manage-request)/rateService' as any,
-                      params: {
-                        requestId: request.id.toString(),
-                        requestInfo: request.requestInfo,
-                        volunteerName: request.pinName,
-                        completedDate: request.completedDate
-                      }
-                    })}
-                  >
-                    <Star size={18} color="#FFFFFF" />
-                    <RateServiceButtonText>Rate This Service</RateServiceButtonText>
-                  </RateServiceButton>
+                  <RatingDisplayContainer>
+                    <RatingLabel>Service Rating</RatingLabel>
+                    {request.isRated ? (
+                      <StarsRow>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={24}
+                            color="#FCD34D"
+                            fill={star <= (request.rating || 0) ? '#FCD34D' : 'transparent'}
+                            strokeWidth={2}
+                          />
+                        ))}
+                        <RatingText>{request.rating}/5</RatingText>
+                      </StarsRow>
+                    ) : (
+                      <NoRatingText>Not yet rated by PIN user</NoRatingText>
+                    )}
+                  </RatingDisplayContainer>
                 )}
               </ResultCard>
             ))
           )}
         </ScrollContainer>
 
-        {/* Create Listing Button */}
-        <CreateListingContainer>
-          <SquarePen 
-            size={26} 
-            color={'#ffffff'}
-            onPress={() => router.navigate('(create-request)/(steps)/step1' as any)}
-          />
-        </CreateListingContainer>
+        {/* Create Listing Button (Only show for PIN users) */}
+        {userRole === 'pin' && (
+          <CreateListingContainer>
+            <SquarePen 
+              size={26} 
+              color={'#ffffff'}
+              onPress={() => router.navigate('(create-request)/(steps)/step1' as any)}
+            />
+          </CreateListingContainer>
+        )}
       </SafeAreaViewContainer>
     </>
   );
@@ -367,27 +441,6 @@ const TopRow = styled.View`
   gap: 12px;
 `;
 
-const CSRLogoContainer = styled.View`
-  width: 56px;
-  height: 56px;
-  background-color: #DBEAFE;
-  border-radius: 12px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const CSRLogoText = styled.Text`
-  font-size: 24px;
-`;
-
-const ProfileImage = styled.Image`
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  border-width: 2px;
-  border-color: #E5E7EB;
-`;
-
 const NameContainer = styled.View`
   flex: 1;
 `;
@@ -475,4 +528,38 @@ const RateServiceButtonText = styled.Text`
   font-size: 16px;
   font-weight: 600;
   color: #FFFFFF;
+`;
+
+const RatingDisplayContainer = styled.View`
+  background-color: #FEF3C7;
+  border-radius: 12px;
+  padding: 16px;
+  border-width: 1.5px;
+  border-color: #FBBF24;
+`;
+
+const RatingLabel = styled.Text`
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400E;
+  margin-bottom: 10px;
+`;
+
+const StarsRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+`;
+
+const RatingText = styled.Text`
+  font-size: 18px;
+  font-weight: 700;
+  color: #92400E;
+  margin-left: 6px;
+`;
+
+const NoRatingText = styled.Text`
+  font-size: 13px;
+  color: #92400E;
+  font-style: italic;
 `;
