@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["__tests__/**/*"]
+  "include": ["__tests__"]
 }
