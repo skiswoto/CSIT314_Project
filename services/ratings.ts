@@ -6,6 +6,7 @@ export interface ServiceRating {
   rating: number;
   rated_by?: string;
   created_at?: string;
+  rater_id?: string;
 }
 
 // Submit a new service rating
