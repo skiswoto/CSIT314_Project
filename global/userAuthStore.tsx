@@ -9,11 +9,14 @@ type State ={
 
 type Action = {
     setUser: (User: User | null) => void
+    clearUser: () => void
 }
 
 export const userAuthStore = create<State & Action>((set) => ({
     user: null,
-    setUser: (user: User | null) => set({ user })
+    role: 'pin',
+    setUser: (user: User | null) => set({ user }),
+    clearUser: () => set({ user: null})
 }))
 
 // Initialize and sync with Supabase session

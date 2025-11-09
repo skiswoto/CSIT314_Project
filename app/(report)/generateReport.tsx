@@ -1,20 +1,16 @@
-import { SafeAreaViewContainer, ScrollContainer } from '@/constants/GlobalStyles'
 import { supabase } from '@/libs/supabase'
 import SegmentedControl from '@react-native-segmented-control/segmented-control'
-import { useRouter } from 'expo-router'
-import { FileCheck2, MoveLeft, UserCheck2, UsersRound } from 'lucide-react-native'
+import { FileCheck2, UserCheck2, UsersRound } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
-import { Dimensions, Pressable, View } from 'react-native'
+import { Dimensions, View } from 'react-native'
 import { BarChart } from "react-native-gifted-charts"
 import { styled } from 'styled-components/native'
 import { Listing } from '../../services/listings'
-import { ScreenTitleText, TopBar } from './userActivity'
 
 
 const SCREEN_WIDTH = Dimensions.get("screen").width
 
 const GenerateReport = () => {
-    const router = useRouter()
     const [range, setRange] = useState<number>(0)
     const [newListingStats, setNewListingStats] = useState<number>(0)
     const [newSignUpStats, setNewSignUpStats] = useState<number>(0)
@@ -92,108 +88,98 @@ const GenerateReport = () => {
     }, [range])
 
     return (
-        <SafeAreaViewContainer>
-            <ScrollContainer>
-                <TopBar>
-                    <Pressable 
-                        onPress={() => router.back()}
-                    >
-                        <MoveLeft size={26} />
-                    </Pressable>
-                    <ScreenTitleText>Platform Statistics</ScreenTitleText>
-                    <View></View>
-                </TopBar>
-                <SegmentedControl
-                    values={['Day', 'Week', 'Month']}
-                    tintColor='#000000'
-                    fontStyle={{ fontWeight: '500', fontSize: 15, color: '#6B7280' }}
-                    activeFontStyle={{ fontWeight: '600', fontSize: 16 }}
-                    selectedIndex={range}
-                    onChange={(event) => {
-                        setRange(event.nativeEvent.selectedSegmentIndex)
+        <>
+            <View style={{ marginTop: 20 }} />
+            <SegmentedControl
+                values={['Day', 'Week', 'Month']}
+                tintColor='#000000'
+                fontStyle={{ fontWeight: '500', fontSize: 15, color: '#6B7280' }}
+                activeFontStyle={{ fontWeight: '600', fontSize: 16 }}
+                selectedIndex={range}
+                onChange={(event) => {
+                    setRange(event.nativeEvent.selectedSegmentIndex)
+                }}
+                style= {{ marginBottom: 6 }}
+            />
+            <LongContainer>
+                <LongCard $primary>
+                    <LongCardRow>
+                        <LongCardIcon $index={1}>
+                            <UserCheck2 size={46} color={'#ffffff'}/>
+                        </LongCardIcon>
+                    </LongCardRow>
+                    <LongCardRow>
+                        <LongCardText>Sign ups</LongCardText>
+                    </LongCardRow>
+                    <LongCardRow>
+                        <LongCardNumber>{newSignUpStats}</LongCardNumber>
+                    </LongCardRow>
+                </LongCard>
+                <LongCard>
+                    <LongCardRow>
+                        <LongCardIcon $index={2}>
+                            <FileCheck2 size={46} color={'#ffffff'}/>
+                        </LongCardIcon>
+                    </LongCardRow>
+                    <LongCardRow>
+                        <LongCardText>Listings created</LongCardText>
+                    </LongCardRow>
+                    <LongCardRow>
+                        <LongCardNumber>{newListingStats}</LongCardNumber>
+                    </LongCardRow>
+                </LongCard>
+            </LongContainer>
+            <LongContainer>
+                <DefaultCard>
+                    <CardRow>
+                        <LongCardIcon $index={3}>
+                            <UsersRound size={40} color={'#ffffff'}/>
+                        </LongCardIcon>
+                        <CardTextColumn>
+                            <LongCardNumber>{completedListings}</LongCardNumber>
+                            <LongCardText>Completed listings</LongCardText>
+                        </CardTextColumn>
+                    </CardRow>
+                </DefaultCard>
+            </LongContainer>
+            <GraphContainer>
+                <GraphTitle>Listings by Urgency</GraphTitle>
+                <BarChart 
+                    data={UrgencyData}
+                    frontColor={"#1861F0"} 
+                    barBorderTopLeftRadius={8}
+                    barBorderTopRightRadius={8}
+                    spacing={30}
+                    xAxisLabelTextStyle={{
+                        color: '#000000',
+                        fontSize: 12,
+                        fontWeight: '500'
                     }}
-                    style= {{ marginBottom: 14 }}
+                    barWidth={60}
+                    noOfSections={4}
+                    disableScroll
+                    xAxisLabelTexts={['High', 'Medium', 'Low']}
+                    xAxisLength={300}
+                    showValuesAsTopLabel={true}
+                    maxValue={100}
                 />
-                <LongContainer>
-                    <LongCard $primary>
-                        <LongCardRow>
-                            <LongCardIcon $index={1}>
-                                <UserCheck2 size={46} color={'#ffffff'}/>
-                            </LongCardIcon>
-                        </LongCardRow>
-                        <LongCardRow>
-                            <LongCardText>Sign ups</LongCardText>
-                        </LongCardRow>
-                        <LongCardRow>
-                            <LongCardNumber>{newSignUpStats}</LongCardNumber>
-                        </LongCardRow>
-                    </LongCard>
-                    <LongCard>
-                        <LongCardRow>
-                            <LongCardIcon $index={2}>
-                                <FileCheck2 size={46} color={'#ffffff'}/>
-                            </LongCardIcon>
-                        </LongCardRow>
-                        <LongCardRow>
-                            <LongCardText>Listings created</LongCardText>
-                        </LongCardRow>
-                        <LongCardRow>
-                            <LongCardNumber>{newListingStats}</LongCardNumber>
-                        </LongCardRow>
-                    </LongCard>
-                </LongContainer>
-                <LongContainer>
-                    <DefaultCard>
-                        <CardRow>
-                            <LongCardIcon $index={3}>
-                                <UsersRound size={40} color={'#ffffff'}/>
-                            </LongCardIcon>
-                            <CardTextColumn>
-                                <LongCardNumber>{completedListings}</LongCardNumber>
-                                <LongCardText>Completed listings</LongCardText>
-                            </CardTextColumn>
-                        </CardRow>
-                    </DefaultCard>
-                </LongContainer>
-                <GraphContainer>
-                    <GraphTitle>Listings by Urgency</GraphTitle>
-                    <BarChart 
-                        data={UrgencyData}
-                        frontColor={"#1861F0"} 
-                        barBorderTopLeftRadius={8}
-                        barBorderTopRightRadius={8}
-                        spacing={30}
-                        xAxisLabelTextStyle={{
-                            color: '#000000',
-                            fontSize: 12,
-                            fontWeight: '500'
-                        }}
-                        barWidth={60}
-                        noOfSections={4}
-                        disableScroll
-                        xAxisLabelTexts={['High', 'Medium', 'Low']}
-                        xAxisLength={300}
-                        showValuesAsTopLabel={true}
-                        maxValue={100}
-                    />
-                </GraphContainer>
-                <ServicesContainer>
-                    <GraphTitle>Listings by Services ({totalListings})</GraphTitle>
-                    {Object.entries(categoryCounts).map(([category, count]) => (
-                        <BarItem key={category}>
-                        <BarLabel>{category}</BarLabel>
-                        <BarContainer>
-                            <BarFill 
-                                width={`${(count / totalListings) * 100 * 1.5}%`}
-                            >
-                            <BarCount>{count}</BarCount>
-                            </BarFill>
-                        </BarContainer>
-                        </BarItem>
-                    ))}
-                </ServicesContainer>
-            </ScrollContainer>
-        </SafeAreaViewContainer>
+            </GraphContainer>
+            <ServicesContainer>
+                <GraphTitle>Listings by Services ({totalListings})</GraphTitle>
+                {Object.entries(categoryCounts).map(([category, count]) => (
+                    <BarItem key={category}>
+                    <BarLabel>{category}</BarLabel>
+                    <BarContainer>
+                        <BarFill 
+                            width={`${(count / totalListings) * 100 * 1.5}%`}
+                        >
+                        <BarCount>{count}</BarCount>
+                        </BarFill>
+                    </BarContainer>
+                    </BarItem>
+                ))}
+            </ServicesContainer>
+        </>
     )
 }
 

@@ -1,61 +1,80 @@
-import { SafeAreaViewContainer, ScrollContainer } from '@/constants/GlobalStyles'
-import { supabase } from '@/libs/supabase'
-import { useRouter } from 'expo-router'
-import { MoveLeft } from 'lucide-react-native'
-import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
-import { styled } from 'styled-components/native'
-
+import { supabase } from '@/libs/supabase';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { styled } from 'styled-components/native';
 interface UserProps {
     id: string;
     created_at: string;
     email: string;
     name: string;
     role: string;
+    listingsCreated?: number
+    listingsDone?: number;
 }
 
-const UserActivity = () => {
-    const router = useRouter()
+interface ListingPerUser {
+    name: string;
+    quantity: number;
+}
 
+const UserLogs = () => {
     const [users, setUsers] = useState<UserProps[]>([])
+    const [listings, setListings] = useState<ListingPerUser[]>([])
 
     const grabAllUsers = async () => {
         try {
-            const { data, error } = await supabase
+            const { data: allUsers, error: allUsersErr } = await supabase
                 .from('Profiles')
                 .select('*')
                 .order('email', { ascending: true });
             
-            if (error) {
-                console.error(error);
+            if (allUsersErr) {
+                console.error(allUsersErr);
                 setUsers([]);
                 return;
             }
             
-            setUsers(data || []);
+            setUsers(allUsers || []);
         } catch (err) {
             console.error("Unexpected error:", err);
             setUsers([]);
         }
     }
 
+    const grabCreatedListingsPerUser = async() => {
+        try {
+            const {data: ListingsData, error: ListingsErr} = await supabase.rpc('compile_num_of_listing_created_per_user')
+
+            if (ListingsErr) {
+                console.error(ListingsErr)
+                setListings([])
+                return
+            }
+            setListings(ListingsData || [])
+        } catch (err) {
+            console.error("Unexpected error:", err);
+            setListings([]);
+        }
+    }
+    
     useEffect(() => {
         grabAllUsers();
+        grabCreatedListingsPerUser()
     }, []);
 
+    const mergedData = users.map((user) => {
+        const listing = listings.find((l) => l.name === user.name); 
+        return {
+            ...user,
+            listingsCreated: listing ? listing.quantity : 0, 
+        };
+    });
+
     return (
-        <SafeAreaViewContainer>
-            <ScrollContainer>
-                <TopBar>
-                    <Pressable 
-                        onPress={() => router.back()}
-                    >
-                        <MoveLeft size={26} />
-                    </Pressable>
-                    <ScreenTitleText>User Activity Logs</ScreenTitleText>
-                    <View></View>
-                </TopBar>
-                {users.map((user) => (
+        <>
+            <View style={{ marginTop: 20 }} />
+            {listings.length > 0 && 
+                mergedData.map((user) => (
                     <UserCard key={user.id}>
                         <UserCardRow>
                             <UserCardTextTitle>Name: </UserCardTextTitle><UserCardTextData>{user.name}</UserCardTextData>
@@ -67,16 +86,26 @@ const UserActivity = () => {
                             <UserCardTextTitle>Role: </UserCardTextTitle><UserCardTextData>{user.role}</UserCardTextData>
                         </UserCardRow>
                         <UserCardRow>
+                            {user.role === 'pin' ? 
+                                <>  
+                                    <UserCardTextTitle># of Listings created: </UserCardTextTitle><UserCardTextData>{user.listingsCreated}</UserCardTextData>
+                                </>:
+                                <>  
+                                    <UserCardTextTitle># of Listings completed: </UserCardTextTitle><UserCardTextData>{user.listingsDone || 0}</UserCardTextData>
+                                </>                            
+                            }
+                        </UserCardRow>
+                        <UserCardRow>
                             <UserCardTextTitle>Created at: </UserCardTextTitle><UserCardTextData>{user.created_at}</UserCardTextData>
                         </UserCardRow>
                     </UserCard>
-                ))}
-            </ScrollContainer>
-        </SafeAreaViewContainer>
+                ))
+            }
+        </>
     )
 }
 
-export default UserActivity
+export default UserLogs
 
 const UserCard = styled.View`
     border-radius: 16px;

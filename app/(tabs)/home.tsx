@@ -1,17 +1,23 @@
+import { userAuthStore } from '@/global/userAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { CheckCircle, Heart, LayoutList, MapPin, Menu, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
+import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
+import { hasPermission } from '../../config/permissions';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
-import FilterBottomSheet from '../filter';
+
 
 const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
   const [filterVisible, setFilterVisible] = useState(false);
+
+  const user = userAuthStore((s) => s.user);
+  const userRole = user?.user_metadata.role;
   
   // Separate filter states for each tab
   const [availableFilters, setAvailableFilters] = useState<ListingFilters>({
@@ -40,7 +46,7 @@ const Home = () => {
   });
 
   const handleApplyFilters = (filters: Omit<ListingFilters, 'status'>) => {
-    console.log('Applied Filters:', filters);
+    // console.log('Applied Filters:', filters);
     
     // Update the appropriate filter state based on active tab
     if (activeTab === 'available') {
@@ -113,22 +119,20 @@ const Home = () => {
     }
   };
 
-  console.log('Query state:', { 
-    isLoading, 
-    error: error?.message, 
-    listingsCount: listings?.length,
-    activeTab,
-    currentFilters
-  });
+  // console.log('Query state:', { 
+  //   isLoading, 
+  //   error: error?.message, 
+  //   listingsCount: listings?.length,
+  //   activeTab,
+  //   currentFilters
+  // });
 
   return (
     <>
       <StatusBar />
       <SafeAreaViewContainer>
         <HeaderSection>
-          <MenuContainer>
-            <Menu size={26} />
-          </MenuContainer>
+          <MenuContainer />
           <Bar>
             <SearchBar>
               <Search />
@@ -189,13 +193,13 @@ const Home = () => {
           )}
 
           {/* Map through listings - same for both tabs*/}
-          {!isLoading && listings && listings.map((listing) => (
+          {!isLoading && listings && hasPermission(userRole, 'canViewAllListings') ? (listings.map((listing) => (
             <ListingCard
               key={listing.id}
               onPress={() => router.navigate({
                 pathname: '/(specific-listing)/sampleListing',
                 params: {
-                  listingId: listing.id,
+                  listingId: String(listing.id),
                   category: listing.category,
                   description: listing.description,
                   address: listing.street_address,
@@ -257,7 +261,11 @@ const Home = () => {
                 </CardFooter>
               </CardContent>
             </ListingCard>
-          ))}
+          ))) : 
+          <EmptyListingsContainer>
+            <SigninToViewListingsText>- Sign in to view listings -</SigninToViewListingsText>
+          </EmptyListingsContainer>
+          }
 
           {/* Empty State */}
           {!isLoading && listings && listings.length === 0 && (
@@ -269,13 +277,14 @@ const Home = () => {
           )}
         </ScrollContainer>
 
+        {hasPermission(userRole, 'canCreateListings') && (
         <CreateListingContainer>
           <SquarePen 
             size={26} 
             color={'#ffffff'}
             onPress={() => router.navigate('(create-request)/(steps)/step1' as any)}
           />
-        </CreateListingContainer>
+        </CreateListingContainer>)}
       </SafeAreaViewContainer>
 
       {/* Filter Bottom Sheet - exclude status from filters passed to user */}
@@ -306,12 +315,7 @@ const HeaderSection = styled.View`
 `;
 
 const MenuContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
   padding-top: 80px;
-  padding-horizontal: 20px;
-  margin-bottom: 24px;
 `;
 
 const Bar = styled.View`
@@ -547,102 +551,6 @@ const CreateListingContainer = styled.Pressable`
   elevation: 4;
 `;
 
-const ResultsHeader = styled.View`
-  margin-bottom: 16px;
-  padding-horizontal: 8px;
-`;
-
-const ResultsHeaderText = styled.Text`
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-`;
-
-const ResultCard = styled.View`
-  background-color: #FFFFFF;
-  border-radius: 12px;
-  border-width: 1px;
-  border-color: #E5E7EB;
-  padding: 20px;
-  margin-bottom: 12px;
-  elevation: 2;
-  shadow-color: #000;
-  shadow-offset: 0px 1px;
-  shadow-opacity: 0.1;
-  shadow-radius: 3px;
-`;
-
-const TopRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
-`;
-
-const CSRLogoContainer = styled.View`
-  width: 48px;
-  height: 48px;
-  background-color: #F3F4F6;
-  border-radius: 24px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const CSRLogoText = styled.Text`
-  font-size: 24px;
-`;
-
-const ProfileImage = styled.Image`
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-`;
-
-const NameContainer = styled.View`
-  flex: 1;
-`;
-
-const PinName = styled.Text`
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-`;
-
-const CategoriesRow = styled.View`
-  flex-direction: row;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-`;
-
-const CategoryTag = styled.View<{ backgroundColor: string }>`
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  background-color: ${props => props.backgroundColor};
-  border-radius: 16px;
-`;
-
-const CategoryText = styled.Text<{ color: string }>`
-  font-size: 12px;
-  font-weight: 500;
-  color: ${props => props.color};
-`;
-
-const ViewMatchButton = styled.TouchableOpacity`
-  background-color: #2B61A6;
-  padding: 12px;
-  border-radius: 8px;
-  align-items: center;
-`;
-
-const ViewMatchButtonText = styled.Text`
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
-`;
-
 const LoadingContainer = styled.View`
   padding: 40px;
   align-items: center;
@@ -689,4 +597,18 @@ const StatusText = styled.Text`
   font-size: 12px;
   font-weight: 600;
   color: #16A34A;
+`;
+
+const EmptyListingsContainer = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  margin-top: 100px;
+`;
+
+const SigninToViewListingsText = styled.Text`
+  color: #8A8A8A;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
 `;

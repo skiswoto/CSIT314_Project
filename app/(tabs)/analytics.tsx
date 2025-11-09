@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Download, FileText, MapPin, Table, TrendingUp } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StatusBar } from 'react-native';
+import { ActivityIndicator, Alert } from 'react-native';
 import { styled } from 'styled-components/native';
-import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import { H2, SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 import { exportAnalyticsJSON, exportToCSV, exportToText } from '../../services/export';
 import { getAllListings } from '../../services/listings';
+
 
 const Analytics = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -113,16 +114,12 @@ const Analytics = () => {
   }
 
   return (
-    <>
-      <StatusBar />
       <SafeAreaViewContainer>
-        <HeaderSection>
-          <PageTitle>Service Analytics</PageTitle>
-          <PageSubtitle>Track your volunteer impact</PageSubtitle>
-        </HeaderSection>
-
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }}>
-          <ContentContainer>
+        <ScrollContainer style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }}>
+          <TopSection>
+            <H2>Service Analytics</H2>
+            <PageSubtitle>Track your volunteer impact</PageSubtitle>
+          </TopSection>
             {/* Summary Cards */}
             <SummarySection>
               <SummaryCard backgroundColor="#DBEAFE">
@@ -241,37 +238,21 @@ const Analytics = () => {
                 </ExportingIndicator>
               )}
             </ExportSection>
-          </ContentContainer>
-        </ScrollView>
+        </ScrollContainer>
       </SafeAreaViewContainer>
-    </>
   );
 };
 
 export default Analytics;
 
 // Styled Components
-const HeaderSection = styled.View`
-  padding: 20px;
-  background-color: #ffffff;
-  border-bottom-width: 1px;
-  border-bottom-color: #E5E7EB;
-`;
-
-const PageTitle = styled.Text`
-  font-size: 28px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 4px;
-`;
+const TopSection = styled.View`
+  margin-bottom: 10px;
+`
 
 const PageSubtitle = styled.Text`
   font-size: 14px;
   color: #6B7280;
-`;
-
-const ContentContainer = styled.View`
-  padding: 20px;
 `;
 
 const SummarySection = styled.View`

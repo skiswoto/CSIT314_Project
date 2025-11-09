@@ -15,6 +15,14 @@ const SignUp: React.FC = () => {
         router.navigate('/(user-auth)/CreatePinPage')
     };
 
+    const handlePMSignUp = () => {
+        router.navigate('/(user-auth)/createPMForm')
+    }
+
+    const handleUASignUp = () => {
+        router.navigate('/(user-auth)/createUAForm')
+    }
+
     return (
         <ModalTemplate>
             <TopBar onPress={() => router.replace('/(tabs)/profile')}>
@@ -38,6 +46,18 @@ const SignUp: React.FC = () => {
                 onPress={handlePINSignUp}
             >
                 <Text style={styles.buttonText}>&quot;I am looking for some help ...&quot;</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.accountButton}
+                onPress={handlePMSignUp}
+            >
+                <Text style={styles.buttonText}>PM signup</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.accountButton}
+                onPress={handleUASignUp}
+            >
+                <Text style={styles.buttonText}>UA signup</Text>
             </TouchableOpacity>
             <View style={styles.bottomLinks}>
                 <Text style={styles.accountText}>Already have an account?</Text>

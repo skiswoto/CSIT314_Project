@@ -1,9 +1,10 @@
 import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
 import { useCreateListingStore } from "@/global/createListingStore";
+import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
-import { StatusBar } from 'react-native';
+import { Alert, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 
 type CreateListingFormTemplateProps = { 
@@ -24,8 +25,11 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         postCode,
         supportingDocuments
     } = useCreateListingStore()
+    
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore()
+    const { user } = userAuthStore();
     const router = useRouter()
+    
     const stepsArray = ([
         '/(create-request)/(steps)/step1', 
         '/(create-request)/(steps)/step2', 
@@ -33,83 +37,94 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
         '/(create-request)/(steps)/step4'
     ] as const)
 
+    const isLastStep = currentStep >= stepsArray.length - 1;
+    
     const handleNextStep = async () => {
-        const lastIndex = stepsArray.length - 1
-
+        const lastIndex = stepsArray.length - 1;
         
         if (currentStep >= lastIndex) {
             try {
-
-                let documentUrls: string[] = []
+                const durationInterval = duration 
+                    ? (() => {
+                        const hours = duration.getHours();
+                        const minutes = duration.getMinutes();
+                        const totalMinutes = hours * 60 + minutes;
+                        return totalMinutes > 0 ? `${totalMinutes} minutes` : null;
+                        })()
+                    : null;
                 
+                // Prepare listing data
+                const listingData = {
+                    description: description || '',
+                    category: category || '',
+                    urgency: urgency || '',
+                    listing_date: date?.toISOString().split('T')[0] || '',
+                    start_time: time?.toISOString() || '',
+                    duration: durationInterval,
+                    street_address: streetAddress || '',
+                    unit_level: unitLevel || '',
+                    building_name: buildingName || '',
+                    post_code: postCode || '',
+                    created_by: user?.id,
+                    status: 'available'
+                };
+                
+                // Create the listing
+                const { data: listing, error: listingError } = await supabase
+                    .from('Listings')
+                    .insert(listingData)
+                    .select()
+                    .single();
+            
+                if (listingError) {
+                    throw listingError;
+                }
+                
+                // Link documents to the listing
                 if (supportingDocuments && supportingDocuments.length > 0) {
-                    for (const doc of supportingDocuments) {
-                        const fileName = `${Date.now()}_${doc.name}`
-                        const filePath = `listing-documents/${fileName}`
+                    const documentUrls = supportingDocuments
+                        .map(doc => doc.url)
+                        .filter((url): url is string => !!url);
+                    
+                    if (documentUrls.length > 0) {
+                        const { error: updateError } = await supabase
+                            .from('supporting_documents')
+                            .update({ listing_id: listing.id })
+                            .in('document_url', documentUrls);
                         
-                        const response = await fetch(doc.uri)
-                        const blob = await response.blob()
-                        
-                        const { data: uploadData, error: uploadError } = await supabase
-                            .storage
-                            .from('documents')
-                            .upload(filePath, blob, {
-                                contentType: doc.type,
-                                cacheControl: '3600',
-                            })
-                        
-                        if (uploadError) {
-                            console.error('Upload error:', uploadError)
-                            throw uploadError
+                        if (updateError) {
+                            console.error('Error linking documents:', updateError);
                         }
-                        
-                        const { data: { publicUrl } } = supabase
-                            .storage
-                            .from('documents')
-                            .getPublicUrl(filePath)
-                        
-                        documentUrls.push(publicUrl)
                     }
                 }
                 
-                const { error } = await supabase.rpc('insert_listing', {
-                    description: description,
-                    category: category,
-                    urgency: urgency,
-                    listing_date: date,
-                    start_time: time,
-                    duration: duration,
-                    street_address: streetAddress,
-                    unit_level: unitLevel,
-                    building_name: buildingName,
-                    post_code: postCode,
-                    supporting_documents: documentUrls.length > 0 ? documentUrls : null  // Add this
-                })
+                Alert.alert('Success', 'Listing created successfully!');
+                router.push('/(tabs)/home');
+                cancelProgress();
                 
-                if (error) throw error
-                
-                router.push('/(tabs)/home')
-                cancelProgress()
-            } catch (e) {
-                console.error(e)
+            } catch (e: any) {
+                console.error('Error creating listing:', e);
+                Alert.alert('Error', e.message || 'Failed to create listing. Please try again.');
             }
-            return
+            return;
         }
-        const nextIndex = Math.min(currentStep + 1, lastIndex)
-        nextStep()
-        router.push(stepsArray[nextIndex])
-    }
+        
+        const nextIndex = Math.min(currentStep + 1, lastIndex);
+        nextStep();
+        router.push(stepsArray[nextIndex]);
+    };
+    
     const handlePreviousStep = () => {
-        if (currentStep <= 0) return
-        previousStep()
-        router.back()
-    }
-
+        if (currentStep <= 0) return;
+        previousStep();
+        router.back();
+    };
+    
     const handleCancelCreateListing = () => {
-        cancelProgress()
-        router.replace('/(tabs)/home')
-    }
-
+        cancelProgress();
+        router.replace('/(tabs)/home');
+    };
+    
     return (
         <>
             <StatusBar />
@@ -126,26 +141,28 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                             <PreviousText>back</PreviousText>
                         </Previous>
                         <Next onPress={handleNextStep}>
-                            <NextText>Next</NextText>
+                            <NextText>{isLastStep ? 'Submit' : 'Next'}</NextText>
                         </Next>
                     </BottomSection>
                 </ScreenContainer>
             </SafeAreaViewContainer>
         </>
-    )
-}
+    );
+};
 
-export default CreateRequestFormTemplate
+export default CreateRequestFormTemplate;
 
 const TopSection = styled.Pressable`
     justify-content: flex-start;
     width: 20%;
 `
+
 const BottomSection = styled.View`
     flex-direction: row;
     justify-content: flex-end;
     align-items: center;
 `
+
 const ScreenContainer = styled.View`
     flex: 1;
     padding-top: 80px;
@@ -153,12 +170,15 @@ const ScreenContainer = styled.View`
     padding-horizontal: 26px;
     background-color: #FCFCFC;
 `
+
 const Content = styled.ScrollView`
     padding-vertical: 40px;
 `
+
 const Previous = styled.Pressable`
     padding-right: 20px;
 `
+
 const Next = styled.Pressable`
     background-color: #000000;
     padding-horizontal: 18px;
@@ -166,12 +186,13 @@ const Next = styled.Pressable`
     border-radius: 10px;
     overflow: hidden;
 `
+
 const PreviousText = styled.Text`
     font-weight: 400;
     font-size: 18px;
     text-decoration-line: underline;
-
 `
+
 const NextText = styled(PreviousText)`
     text-decoration-line: none;
     color: #ffffff;

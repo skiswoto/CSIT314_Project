@@ -1,121 +1,155 @@
-import { Tabs } from 'expo-router';
-import { BarChart3, FileUser, User, UserRoundSearch } from 'lucide-react-native';
+import { userAuthStore } from '@/global/userAuthStore';
+import { Href, Tabs } from 'expo-router';
+import { Activity, BarChart, ChartLine, FileUser, HeartPulse, User, UserRoundSearch } from 'lucide-react-native';
 
-const TabLayout = (): React.ReactElement => {
+
+export default function TabLayout() {
+    const user = userAuthStore((s) => s.user);
+    const userRole = user?.user_metadata?.role?.toLowerCase() as 'unregistered' | 'pin' | 'csr_rep' | 'platform_manager' | 'user_admin';
+
+    const roleBasedTabs = {
+        unregistered: ['home', 'profile'],
+        pin: ['home', 'myListings', 'engagementStats', 'profile'],
+        csr_rep: ['home', 'savedRequest', 'analytics', 'profile'],
+        platform_manager: ['home', 'platformAnalytics', 'appHealth', 'profile'],
+        user_admin: ['home', 'platformAnalytics', 'userLogs', 'profile'],
+    } as const;
+
+    const tabConfig = {
+        home: {
+            title: 'Home',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <UserRoundSearch color={color} size={size} />
+            ),
+        },
+        myListings: {
+            title: 'View My Listings',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <FileUser color={color} size={size} />
+            ),
+        },
+        savedRequest: {
+            title: 'Saved Requests',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <FileUser color={color} size={size} />
+            ),
+        },
+        analytics: {
+            title: 'Analytics',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <BarChart color={color} size={size} />
+            ),
+        },
+        profile: {
+            title: 'Profile',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <User color={color} size={size} />
+            ),
+        },
+        platformAnalytics: {
+            title: 'Platform Analytics',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <BarChart color={color} size={size} />
+            ),
+        },
+        userLogs: {
+            title: 'User Activity',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <Activity color={color} size={size} />
+            ),
+        },
+        engagementStats: {
+            title: 'Listing Engagements',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <ChartLine color={color} size={size} />
+            ),
+        }, 
+        appHealth: {
+            title: 'Platform Health',
+            headerShown: false,
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+                <HeartPulse color={color} size={size} />
+            ),
+        }
+    };
+
+    const visibleTabs = roleBasedTabs[userRole] ?? roleBasedTabs['unregistered'];
+
+    type TabName = keyof typeof tabConfig;
+    const isTabVisible = (tabName: TabName): boolean => {
+        return (visibleTabs as readonly TabName[]).includes(tabName);
+    }
+
     return (
         <Tabs>
-            <Tabs.Screen 
+            <Tabs.Screen
                 name="home"
                 options={{
-                    title:'Home',
-                    headerShown: false, 
-                    tabBarIcon: () => <UserRoundSearch />
-                }}
-            />
-            <Tabs.Screen
-                name="viewRequest"
-                options={{
-                    title:'View Request (CSR)',
-                    headerShown: false, 
-                    tabBarIcon: () => <FileUser />
+                    ...tabConfig.home,
+                    href: isTabVisible('home') ? '/home' : null,
                 }}
             />
             <Tabs.Screen
                 name="myListings"
                 options={{
-                    title:'View Own Request (PIN)',
-                    headerShown: false, 
-                    tabBarIcon: () => <FileUser />
+                    ...tabConfig.myListings,
+                    href: isTabVisible('myListings') ? '/myListings' : null,
                 }}
             />
             <Tabs.Screen
                 name="savedRequest"
                 options={{
-                    title:'Saved Requests',
-                    headerShown: false, 
-                    tabBarIcon: () => <FileUser />
+                    ...tabConfig.savedRequest,
+                    href: isTabVisible('savedRequest') ? '/savedRequest' : null,
                 }}
             />
-            <Tabs.Screen 
+            <Tabs.Screen
                 name="analytics"
                 options={{
-                tabBarIcon: ({ color}) => <BarChart3 size={24} color={color} />,
-                tabBarLabel: 'Analytics',
+                    ...tabConfig.analytics,
+                    href: isTabVisible('analytics') ? '/analytics' : null,
                 }}
             />
-            <Tabs.Screen 
-                name="profile"
+            <Tabs.Screen
+                name="platformAnalytics"
                 options={{
-                    title:'Profile',
-                    headerShown: false, 
-                    tabBarIcon: () => <User />
+                    ...tabConfig.platformAnalytics,
+                    href: isTabVisible('platformAnalytics') ? '/platformAnalytics' : null,
                 }}
-            /> 
+            />
+            <Tabs.Screen
+                name="userLogs"
+                options={{
+                    ...tabConfig.userLogs,
+                    href: isTabVisible('userLogs') ? '/userLogs' : null,
+                }}
+            />
+            <Tabs.Screen
+                name="engagementStats"
+                options={{
+                    ...tabConfig.engagementStats,
+                    href: isTabVisible('engagementStats') ? '/engagementStats' : null,
+                }}
+            />
+            <Tabs.Screen
+                name="appHealth"
+                options={{
+                    ...tabConfig.appHealth,
+                    href: (isTabVisible('appHealth') ? '/appHealth' : null) as Href || null,
+                }}
+            />
+            <Tabs.Screen
+                name="profile"
+                options={tabConfig.profile}
+            />
         </Tabs>
-    )
+    );
 }
-// import { userAuthStore } from '@/global/userAuthStore'; // Import the userAuthStore
-// import { Tabs } from 'expo-router';
-// import { FileUser, User, UserRoundSearch } from 'lucide-react-native';
-
-// const TabLayout = (): React.ReactElement => {
-//   const user = userAuthStore(s => s.user);  // Get the logged-in user data
-//   const userRole = user?.user_metadata.role; // Extract the role
-
-//   return (
-//     <Tabs>
-//       <Tabs.Screen 
-//         name="home"
-//         options={{
-//           title:'Home',
-//           headerShown: false, 
-//           tabBarIcon: () => <UserRoundSearch />
-//         }}
-//       />
-//       {/* Render CSR-specific View Request tab only if user is CSR */}
-//       {userRole === 'csr_rep' && (
-//         <Tabs.Screen
-//           name="viewRequest"
-//           options={{
-//             title:'View Request (CSR)',
-//             headerShown: false, 
-//             tabBarIcon: () => <FileUser />
-//           }}
-//         />
-//       )}
-//       {/* Render PIN-specific View Own Request tab only if user is PIN */}
-//       {userRole === 'pin' && (
-//         <Tabs.Screen
-//           name="myListings"
-//           options={{
-//             title:'View Own Request (PIN)',
-//             headerShown: false, 
-//             tabBarIcon: () => <FileUser />
-//           }}
-//         />
-//       )}
-//       {/* Render Saved Requests tab only if user is CSR */}
-//       {userRole === 'csr_rep' && (
-//         <Tabs.Screen
-//           name="savedRequest"
-//           options={{
-//             title:'Saved Requests',
-//             headerShown: false, 
-//             tabBarIcon: () => <FileUser />
-//           }}
-//         />
-//       )}
-//       {/* Always render the Profile tab */}
-//       <Tabs.Screen 
-//         name="profile"
-//         options={{
-//           title:'Profile',
-//           headerShown: false, 
-//           tabBarIcon: () => <User />
-//         }}
-//       />
-//     </Tabs>
-//   )
-// }
-
-export default TabLayout;

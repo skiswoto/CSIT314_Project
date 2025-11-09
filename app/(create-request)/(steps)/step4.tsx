@@ -1,6 +1,7 @@
 import { StepSubTitle, StepTitle } from "@/constants/createRequestFormStyles";
 import { useCreateListingStore } from "@/global/createListingStore";
-import { getDocumentSignedUrl, uploadDocument, UploadedDocument } from '@/services/documents';
+import { userAuthStore } from "@/global/userAuthStore"; // Import userAuthStore
+import { getDocumentSignedUrl, saveDocumentRecord, uploadDocument, UploadedDocument } from '@/services/listings';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";
@@ -10,6 +11,7 @@ import CreateRequestFormTemplate from "../createRequestFormTemplate";
 
 const Step4 = () => {
     const { supportingDocuments, setSupportingDocuments } = useCreateListingStore();
+    const { user } = userAuthStore(); // Get user from auth store
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [viewingDocument, setViewingDocument] = useState<string | null>(null);
@@ -43,18 +45,16 @@ const Step4 = () => {
     };
 
     const viewDocument = async (doc: UploadedDocument) => {
-    try {
-        if (!doc.url) {
-            Alert.alert('Error', 'Document URL not available');
-            return;
-        }
-        
-        setViewingDocument(doc.url);
-        const signedUrl = await getDocumentSignedUrl(doc.url);
-        
-        if (signedUrl) {
-            // For PDFs, open in browser or external viewer
-            if (doc.type === 'application/pdf') {
+        try {
+            if (!doc.url) {
+                Alert.alert('Error', 'Document URL not available');
+                return;
+            }
+            
+            setViewingDocument(doc.url);
+            const signedUrl = await getDocumentSignedUrl(doc.url);
+            
+            if (signedUrl) {
                 const canOpen = await Linking.canOpenURL(signedUrl);
                 if (canOpen) {
                     await Linking.openURL(signedUrl);
@@ -62,28 +62,26 @@ const Step4 = () => {
                     Alert.alert('Error', 'Unable to open document');
                 }
             } else {
-                const canOpen = await Linking.canOpenURL(signedUrl);
-                if (canOpen) {
-                    await Linking.openURL(signedUrl);
-                } else {
-                    Alert.alert('Error', 'Unable to open image');
-                }
+                Alert.alert('Error', 'Could not retrieve document');
             }
-        } else {
-            Alert.alert('Error', 'Could not retrieve document');
+        } catch (error) {
+            console.error('Error viewing document:', error);
+            Alert.alert('Error', 'Failed to open document');
+        } finally {
+            setViewingDocument(null);
         }
-    } catch (error) {
-        console.error('Error viewing document:', error);
-        Alert.alert('Error', 'Failed to open document');
-    } finally {
-        setViewingDocument(null);
-    }
-};
+    };
 
     const handleImagePicker = async () => {
         try {
             setUploadError(null);
             
+            // Check if user is authenticated
+            if (!user?.id) {
+                Alert.alert("Authentication Required", "Please log in to upload documents.");
+                return;
+            }
+
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
             
             if (!permissionResult.granted) {
@@ -110,6 +108,7 @@ const Step4 = () => {
                     setIsUploading(true);
                     
                     const uploadPromises = validFiles.map(async (asset) => {
+                        // Upload to storage
                         const documentUrl = await uploadDocument({
                             uri: asset.uri,
                             name: asset.fileName || `image_${Date.now()}.jpg`,
@@ -117,14 +116,22 @@ const Step4 = () => {
                             size: asset.fileSize
                         });
 
-                        if (documentUrl) {
-                            return {
-                                uri: asset.uri,
-                                name: asset.fileName || `image_${Date.now()}.jpg`,
-                                type: asset.mimeType || 'image/jpeg',
-                                size: asset.fileSize,
-                                url: documentUrl 
-                            } as UploadedDocument;
+                        if (documentUrl && user?.id) {
+                            // Save to database immediately
+                            const saved = await saveDocumentRecord(
+                                documentUrl, 
+                                user.id
+                            );
+
+                            if (saved) {
+                                return {
+                                    uri: asset.uri,
+                                    name: asset.fileName || `image_${Date.now()}.jpg`,
+                                    type: asset.mimeType || 'image/jpeg',
+                                    size: asset.fileSize,
+                                    url: documentUrl 
+                                } as UploadedDocument;
+                            }
                         }
                         return null;
                     });
@@ -156,6 +163,12 @@ const Step4 = () => {
         try {
             setUploadError(null);
             
+            // Check if user is authenticated
+            if (!user?.id) {
+                Alert.alert("Authentication Required", "Please log in to upload documents.");
+                return;
+            }
+
             const result = await DocumentPicker.getDocumentAsync({
                 type: ['application/pdf', 'image/*'],
                 multiple: true,
@@ -178,6 +191,7 @@ const Step4 = () => {
                     setIsUploading(true);
                     
                     const uploadPromises = validFiles.map(async (file) => {
+                        // Upload to storage
                         const documentUrl = await uploadDocument({
                             uri: file.uri,
                             name: file.name,
@@ -185,14 +199,22 @@ const Step4 = () => {
                             size: file.size
                         });
 
-                        if (documentUrl) {
-                            return {
-                                uri: file.uri,
-                                name: file.name,
-                                type: file.mimeType || 'application/pdf',
-                                size: file.size,
-                                url: documentUrl
-                            } as UploadedDocument;
+                        if (documentUrl && user?.id) {
+                            // Save to database immediately
+                            const saved = await saveDocumentRecord(
+                                documentUrl, 
+                                user.id
+                            );
+
+                            if (saved) {
+                                return {
+                                    uri: file.uri,
+                                    name: file.name,
+                                    type: file.mimeType || 'application/pdf',
+                                    size: file.size,
+                                    url: documentUrl
+                                } as UploadedDocument;
+                            }
                         }
                         return null;
                     });
