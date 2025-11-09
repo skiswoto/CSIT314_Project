@@ -61,10 +61,10 @@ const CompletedRequestScreen = () => {
         .from('Listings')
         .select(`
           *,
-          creator:Profiles!Listings_created_by_fkey(name)
+          creator:Profiles!listings_created_by_fkey(name)
         `)
         .eq('status', 'completed')
-        .order('updated_at', { ascending: false }); // Latest first
+        .order('created_at', { ascending: false }); // Latest first
       
       // If PIN user, only show their own listings
       if (role === 'pin') {
@@ -114,7 +114,7 @@ const CompletedRequestScreen = () => {
             location: addressParts.length > 0 ? addressParts.join(', ') : 'Unknown',
             urgency: listing.urgency || 'Low',
             requestInfo: listing.description || '',
-            completedDate: listing.updated_at || listing.created_at || new Date().toISOString(),
+            completedDate: listing.created_at || listing.created_at || new Date().toISOString(),
             isRated: !!rating,
             rating: rating?.rating || null,
             pinUserId: listing.created_by,

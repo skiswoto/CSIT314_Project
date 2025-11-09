@@ -1,39 +1,20 @@
 // services/clickTracker.ts
-import { supabase } from '@/libs/supabase'; // Import your supabase instance
+import { supabase } from '@/libs/supabase';
 
-export const incrementClickForListing = async (listingId: string, month: string) => {
-  try {
-    // Get the current value of clicks
-    const { data: currentData, error: fetchError } = await supabase
-      .from('pindashboard')
-      .select('clicks')
-      .eq('id', listingId)
-      .eq('month', month)
-      .single();
-
-    if (fetchError) {
-      throw fetchError;
-    }
-
-    // Calculate the new clicks value
-    const newClicks = currentData ? currentData.clicks + 1 : 1;
-
-    // Update the clicks for the given listing and month
-    const { error } = await supabase
-      .from('pindashboard')
-      .update({ clicks: newClicks })
-      .eq('id', listingId)
-      .eq('month', month);
-
-    if (error) {
-      throw error;
-    }
-
-    console.log('Click incremented for listing:', listingId);
-  } catch (error) {
-    console.error('Error incrementing click:', error);
+/** Monthly aggregate click (no params). */
+export async function incrementMonthClick() {
+  const { error } = await supabase.rpc('increment_month_click');
+  if (error) {
+    console.error('increment_month_click failed:', error);
+    throw error;
   }
-};
+}
 
-
-//database = @/libs/supabase
+/** Optional: per-listing click (keep if you still need it). */
+export async function incrementClickForListing(listingId: string) {
+  const { error } = await supabase.rpc('incrementclickforlisting', { listing_id: listingId });
+  if (error) {
+    console.error('incrementclickforlisting failed:', error);
+    throw error;
+  }
+}
