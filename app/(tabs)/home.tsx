@@ -2,7 +2,7 @@ import { userAuthStore } from '@/global/userAuthStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
+import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
@@ -12,7 +12,6 @@ import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
 
-
 const Home = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
@@ -20,6 +19,9 @@ const Home = () => {
 
   const user = userAuthStore((s) => s.user);
   const userRole = user?.user_metadata.role;
+
+  // --- NEW: search text state
+  const [searchText, setSearchText] = useState('');
 
   // Saved IDs for heart fill state
   const [savedIds, setSavedIds] = useState<number[]>([]);
@@ -118,6 +120,18 @@ const Home = () => {
     }
   };
 
+  // --- NEW: client-side filtering by search text
+  const visibleListings = (listings ?? []).filter((l: any) => {
+    if (!searchText.trim()) return true;
+    const q = searchText.trim().toLowerCase();
+    return (
+      l.category?.toLowerCase().includes(q) ||
+      l.description?.toLowerCase().includes(q) ||
+      l.street_address?.toLowerCase().includes(q) ||
+      l.urgency?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <>
       <StatusBar />
@@ -125,9 +139,23 @@ const Home = () => {
         <HeaderSection>
           <MenuContainer />
           <Bar>
-            <SearchBar>
+            {/* --- NEW: real search input */}
+            <SearchBarContainer>
               <Search />
-            </SearchBar>
+              <SearchInput
+                placeholder="Search listings…"
+                value={searchText}
+                onChangeText={setSearchText}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+              {searchText.length > 0 && (
+                <ClearSearch onPress={() => setSearchText('')}>
+                  <X size={16} color="#6B7280" />
+                </ClearSearch>
+              )}
+            </SearchBarContainer>
+
             <FilterButtonContainer>
               <Filter onPress={() => setFilterVisible(true)}>
                 <SlidersHorizontal />
@@ -157,7 +185,6 @@ const Home = () => {
             </TabButton>
           </TabBar>
 
-          {/* Quick link to Saved screen */}
           <SavedNav onPress={() => router.push('/(manage-request)/savedRequest')}>
             <SavedNavText>Go to Saved</SavedNavText>
           </SavedNav>
@@ -186,93 +213,89 @@ const Home = () => {
             <ErrorText>Error loading listings. Please try again.</ErrorText>
           )}
 
-          {!isLoading && listings && hasPermission(userRole, 'canViewAllListings') ? (listings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              onPress={() => router.navigate({
-                pathname: '/(specific-listing)/sampleListing',
-                params: {
-                  listingId: String(listing.id),
-                  category: listing.category,
-                  description: listing.description,
-                  address: listing.street_address,
-                  startTime: listing.start_time,
-                  duration: listing.duration,
-                  urgency: listing.urgency,
-                  status: listing.status
-                }
-              })}
-            >
-              <CardContent>
-                <CardHeader>
-                  <CategoryBadge>
-                    <CategoryBadgeText>{listing.category}</CategoryBadgeText>
-                  </CategoryBadge>
+          {!isLoading && visibleListings && hasPermission(userRole, 'canViewAllListings') ? (
+            visibleListings.map((listing: any) => (
+              <ListingCard
+                key={listing.id}
+                onPress={() => router.navigate({
+                  pathname: '/(specific-listing)/sampleListing',
+                  params: {
+                    listingId: String(listing.id),
+                    category: listing.category,
+                    description: listing.description,
+                    address: listing.street_address,
+                    startTime: listing.start_time,
+                    duration: listing.duration,
+                    urgency: listing.urgency,
+                    status: listing.status
+                  }
+                })}
+              >
+                <CardContent>
+                  <CardHeader>
+                    <CategoryBadge>
+                      <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+                    </CategoryBadge>
 
-                  <CardActions>
-  <ActionButton
-    onPress={async () => {
-      try {
-        const res = await toggleSave(listing.id);
-        console.log(`[save] listing ${listing.id} → saved=${res.saved}`);
-      } catch (e) {
-        console.error('[save] failed:', e);
-      }
-    }}
-  >
-    <Heart size={20} color="#6B7280" />
-  </ActionButton>
+                    <CardActions>
+                      <ActionButton onPress={() => handleToggleSave(listing.id)}>
+                        <Heart
+                          size={20}
+                          color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
+                          fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
+                        />
+                      </ActionButton>
 
-  <ActionButton>
-    <MoveRight size={20} color="#6B7280" />
-  </ActionButton>
-</CardActions>
+                      <ActionButton>
+                        <MoveRight size={20} color="#6B7280" />
+                      </ActionButton>
+                    </CardActions>
+                  </CardHeader>
 
-                </CardHeader>
+                  <CardBody>
+                    <ListingTitle>{listing.category}</ListingTitle>
+                    <ListingSubtitle numberOfLines={3}>
+                      {listing.description}
+                    </ListingSubtitle>
+                  </CardBody>
 
-                <CardBody>
-                  <ListingTitle>{listing.category}</ListingTitle>
-                  <ListingSubtitle numberOfLines={3}>
-                    {listing.description}
-                  </ListingSubtitle>
-                </CardBody>
+                  <CardFooter>
+                    <LocationRow>
+                      <MapPin size={16} color="#6B7280" />
+                      <ListingLocation numberOfLines={1}>
+                        {listing.street_address}
+                      </ListingLocation>
+                    </LocationRow>
 
-                <CardFooter>
-                  <LocationRow>
-                    <MapPin size={16} color="#6B7280" />
-                    <ListingLocation numberOfLines={1}>
-                      {listing.street_address}
-                    </ListingLocation>
-                  </LocationRow>
-
-                  <FooterRow>
-                    {listing.urgency && (
-                      <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
-                        <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
-                          {listing.urgency} Priority
-                        </UrgencyText>
-                      </UrgencyBadge>
-                    )}
-                    {activeTab === 'completed' && (
-                      <StatusBadge>
-                        <CheckCircle size={14} color="#16A34A" />
-                        <StatusText>Completed</StatusText>
-                      </StatusBadge>
-                    )}
-                  </FooterRow>
-                </CardFooter>
-              </CardContent>
-            </ListingCard>
-          ))) :
+                    <FooterRow>
+                      {listing.urgency && (
+                        <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
+                          <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
+                            {listing.urgency} Priority
+                          </UrgencyText>
+                        </UrgencyBadge>
+                      )}
+                      {activeTab === 'completed' && (
+                        <StatusBadge>
+                          <CheckCircle size={14} color="#16A34A" />
+                          <StatusText>Completed</StatusText>
+                        </StatusBadge>
+                      )}
+                    </FooterRow>
+                  </CardFooter>
+                </CardContent>
+              </ListingCard>
+            ))
+          ) : (
             <EmptyListingsContainer>
               <SigninToViewListingsText>- Sign in to view listings -</SigninToViewListingsText>
             </EmptyListingsContainer>
-          }
+          )}
 
-          {!isLoading && listings && listings.length === 0 && (
+          {!isLoading && visibleListings && visibleListings.length === 0 && (
             <EmptyText>
-              {getActiveFilterCount() > 0
-                ? `No ${activeTab} listings match your filters. Try adjusting them.`
+              {searchText
+                ? `No ${activeTab} listings match "${searchText}".`
                 : `No ${activeTab} listings yet.`}
             </EmptyText>
           )}
@@ -306,6 +329,8 @@ const Home = () => {
 
 export default Home;
 
+/* ---------------- Styles ---------------- */
+
 const ScrollContainer = styled.ScrollView`
   margin-horizontal: 20px;
   padding-top: 16px;
@@ -336,14 +361,24 @@ const Bar = styled.View`
   margin-bottom: 20px;
 `;
 
-const SearchBar = styled.Pressable`
-  padding-horizontal: 20px;
-  padding-vertical: 12px;
+/* NEW: Search input UI */
+const SearchBarContainer = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-horizontal: 14px;
+  padding-vertical: 10px;
   background-color: #ffffff;
   border-radius: 30px;
-  overflow: hidden;
-  justify-content: flex-start;
   width: 80%;
+`;
+const SearchInput = styled.TextInput`
+  flex: 1;
+  font-size: 15px;
+  color: #111827;
+`;
+const ClearSearch = styled.Pressable`
+  padding: 4px;
 `;
 
 const Filter = styled.Pressable`
@@ -405,8 +440,8 @@ const TabButton = styled.TouchableOpacity<{ isActive: boolean }>`
 
 const TabText = styled.Text<{ isActive: boolean }>`
   font-size: 12px;
-  font-weight: ${props => props.isActive ? '600' : '500'};
-  color: ${props => props.isActive ? '#000000' : '#9CA3AF'};
+  font-weight: ${props => (props.isActive ? '600' : '500')};
+  color: ${props => (props.isActive ? '#000000' : '#9CA3AF')};
   margin-top: 2px;
 `;
 
