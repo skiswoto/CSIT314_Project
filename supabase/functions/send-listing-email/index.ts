@@ -32,7 +32,7 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         from: 'onboarding@resend.dev',  // Resend's test email (free to use)
-        to: ['kiswotoshawn@gmail.com'], // Hardcoded recepient TODO: change to profile.email
+        to: ['monasterypin@gmail.com'], // Hardcoded recepient TODO: change to profile.email
         subject: `✅ New Listing Accepted: ${category}`,
         html: `
           <!DOCTYPE html>

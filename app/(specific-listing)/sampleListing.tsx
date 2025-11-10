@@ -6,7 +6,7 @@ import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { supabase } from '../../libs/supabase';
 import { sendListingAcceptedEmail } from '../../services/emailNotifications';
-import { acceptListing } from '../../services/listings';
+import { acceptListing, completeListing } from '../../services/listings';
 import DocumentViewer from './viewDocs';
 
 const SampleListing = () => {
@@ -25,7 +25,10 @@ const SampleListing = () => {
     } = params;
     
     const isCompleted = status === 'completed';
+    const isAccepted = status === 'accepted';
     const [isAccepting, setIsAccepting] = useState(false);
+    const [isButtonDisabled, setIsButtonDisabled] = useState(isAccepted || isCompleted);
+    const [countdown, setCountdown] = useState<number | null>(null);
     const [showDocuments, setShowDocuments] = useState(false);
     const [documentCount, setDocumentCount] = useState(0);
     const [isLoadingDocs, setIsLoadingDocs] = useState(true);
@@ -36,6 +39,22 @@ const SampleListing = () => {
         loadDocumentCount();
         loadUserRoleAndRating();
     }, [listingId]);
+    
+    // Timer effect for completing listing after 15 seconds
+    useEffect(() => {
+        if (countdown === null) return;
+        
+        if (countdown === 0) {
+            handleCompleteListing();
+            return;
+        }
+        
+        const timer = setTimeout(() => {
+            setCountdown(countdown - 1);
+        }, 1000);
+        
+        return () => clearTimeout(timer);
+    }, [countdown]);
     
     const loadDocumentCount = async () => {
         try {
@@ -164,17 +183,45 @@ Status: ${status}`.trim();
                 duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A'
             });
             
+            // Disable button and start countdown
+            setIsButtonDisabled(true);
+            setCountdown(15);
+            
             Alert.alert(
                 'Success',
-                'Listing accepted! Email sent to kiswotoshawn@gmail.com',
-                [{ text: 'OK', onPress: () => router.back() }]
+                'Listing accepted! Email sent to monasterypin@gmail.com\nListing will be completed in 15 seconds.',
+                [{ text: 'OK' }]
             );
             
         } catch (error) {
             console.error('Error accepting listing:', error);
             Alert.alert('Error', 'Failed to accept listing. Please try again.');
+            setIsButtonDisabled(false);
         } finally {
             setIsAccepting(false);
+        }
+    };
+    
+    const handleCompleteListing = async () => {
+        try {
+            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+            
+            if (!normalizedListingId) {
+                console.error('Invalid listing ID');
+                return;
+            }
+            
+            await completeListing(normalizedListingId);
+            
+            Alert.alert(
+                'Completed',
+                'Listing has been marked as completed!',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+            
+        } catch (error) {
+            console.error('Error completing listing:', error);
+            Alert.alert('Error', 'Failed to complete listing.');
         }
     };
     
@@ -344,15 +391,23 @@ Status: ${status}`.trim();
                     </Row>
                     
                     <ApplyButton 
-                        disabled={isCompleted || isAccepting}
+                        disabled={isButtonDisabled || isAccepting || isCompleted}
                         onPress={handleAcceptListing}
+                        style={{ 
+                            backgroundColor: (isButtonDisabled || isCompleted) ? '#9CA3AF' : '#111827',
+                            opacity: (isButtonDisabled || isCompleted) ? 0.6 : 1 
+                        }}
                     >
                         <ApplyButtonText>
                             {isAccepting 
                                 ? 'Processing...' 
                                 : isCompleted 
-                                    ? 'Service Completed' 
-                                    : 'Apply now'
+                                    ? 'Service Completed'
+                                    : countdown !== null
+                                        ? `Accepted`
+                                        : isAccepted
+                                            ? 'Already Accepted'
+                                            : 'Apply now'
                             }
                         </ApplyButtonText>
                     </ApplyButton>
