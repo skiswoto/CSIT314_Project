@@ -362,15 +362,18 @@ Status: ${status}`.trim();
                         {description || 'No description provided.'}
                     </ListingDescription>
                     
-                    <DocumentButton onPress={() => setShowDocuments(true)}>
-                        <FileText size={20} color="#4F46E5" />
-                        <DocumentButtonText>
-                            {isLoadingDocs 
-                                ? 'Loading documents...' 
-                                : `View Documents (${documentCount})`
-                            }
-                        </DocumentButtonText>
-                    </DocumentButton>
+                    {/* Show View Documents button only to CSR/Platform Manager */}
+                    {(userRole === 'csr_rep' || userRole === 'platform_manager') && (
+                        <DocumentButton onPress={() => setShowDocuments(true)}>
+                            <FileText size={20} color="#4F46E5" />
+                            <DocumentButtonText>
+                                {isLoadingDocs 
+                                    ? 'Loading documents...' 
+                                    : `View Documents (${documentCount})`
+                                }
+                            </DocumentButtonText>
+                        </DocumentButton>
+                    )}
                     
                     {isCompleted && (
                         <InsightsSection>
@@ -489,6 +492,10 @@ Status: ${status}`.trim();
                                         ))}
                                     </StarsDisplayRow>
                                     
+                                    <RatingCountText>
+                                        Rated by service requester
+                                    </RatingCountText>
+                                    
                                     {isCreator && (
                                         <UserRatingBadge>
                                             <Star size={16} color="#2B61A6" fill="#2B61A6" />
@@ -506,27 +513,36 @@ Status: ${status}`.trim();
                         </RatingDisplaySection>
                     )}
                     
-                    <ApplyButton 
-                        disabled={isButtonDisabled || isAccepting || isCompleted}
-                        onPress={handleAcceptListing}
-                        style={{ 
-                            backgroundColor: (isButtonDisabled || isCompleted) ? '#9CA3AF' : '#111827',
-                            opacity: (isButtonDisabled || isCompleted) ? 0.6 : 1 
-                        }}
-                    >
-                        <ApplyButtonText>
-                            {isAccepting 
-                                ? 'Processing...' 
-                                : isCompleted 
-                                    ? 'Service Completed'
+                    {/* Apply Button - Only show to CSR/Platform Manager users, not to PIN users */}
+                    {!isCompleted && (userRole === 'csr_rep' || userRole === 'platform_manager') && (
+                        <ApplyButton 
+                            disabled={isButtonDisabled || isAccepting}
+                            onPress={handleAcceptListing}
+                            style={{ 
+                                backgroundColor: isButtonDisabled ? '#9CA3AF' : '#111827',
+                                opacity: isButtonDisabled ? 0.6 : 1 
+                            }}
+                        >
+                            <ApplyButtonText>
+                                {isAccepting 
+                                    ? 'Processing...' 
                                     : countdown !== null
                                         ? `Accepted - Completing in ${countdown}s`
                                         : isAccepted
                                             ? 'Already Accepted'
                                             : 'Apply now'
-                            }
-                        </ApplyButtonText>
-                    </ApplyButton>
+                                }
+                            </ApplyButtonText>
+                        </ApplyButton>
+                    )}
+                    
+                    {/* Service Completed Badge - Show to everyone on completed listings */}
+                    {isCompleted && (
+                        <CompletedBadge>
+                            <CheckCircle size={20} color="#16A34A" />
+                            <CompletedBadgeText>Service Completed</CompletedBadgeText>
+                        </CompletedBadge>
+                    )}
                     
                     {isCompleted && (
                         <>
@@ -901,6 +917,12 @@ const StarsDisplayRow = styled.View`
     margin-bottom: 12px;
 `;
 
+const RatingCountText = styled.Text`
+    text-align: center;
+    font-size: 14px;
+    color: #92400E;
+    margin-bottom: 12px;
+`;
 
 const UserRatingBadge = styled.View`
     flex-direction: row;
@@ -926,4 +948,22 @@ const NoRatingYetText = styled.Text`
     color: #92400E;
     font-style: italic;
     padding: 20px 0;
+`;
+
+const CompletedBadge = styled.View`
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #DCFCE7;
+    padding: 16px;
+    border-radius: 24px;
+    border-width: 2px;
+    border-color: #16A34A;
+`;
+
+const CompletedBadgeText = styled.Text`
+    font-size: 18px;
+    font-weight: 600;
+    color: #16A34A;
 `;
