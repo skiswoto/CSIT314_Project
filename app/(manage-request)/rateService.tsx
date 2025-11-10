@@ -7,185 +7,148 @@ import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalSt
 import { submitRating } from '../../services/ratings';
 
 const RateService = () => {
-    const router = useRouter();
-    const params = useLocalSearchParams();
+  const router = useRouter();
+  const params = useLocalSearchParams();
 
-    console.log('Received params:', params);
-    
-    const { listingId, requestInfo, category } = params;
-    
-    const [rating, setRating] = useState(0);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  console.log('Received params:', params);
 
-    const handleStarPress = (starIndex: number) => {
-        setRating(starIndex);
-    };
+  // ✅ keep this — you need listingId below
+  const { listingId } = params as { listingId?: string | string[] };
 
-    const handleSubmit = async () => {
-        if (rating === 0) {
-            Alert.alert('Rating Required', 'Please select a star rating before submitting.');
-            return;
-        }
+  const [rating, setRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-        setIsSubmitting(true);
+  const handleStarPress = (starIndex: number) => setRating(starIndex);
 
-        try {
-            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
-            
-            if (!normalizedListingId || normalizedListingId === 'undefined') {
-                Alert.alert('Error', 'Invalid listing ID. Please try again.');
-                return;
-            }
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      Alert.alert('Rating Required', 'Please select a star rating before submitting.');
+      return;
+    }
 
-            console.log('Submitting rating:', {
-                listing_id: Number(normalizedListingId),
-                rating: rating,
-            });
+    setIsSubmitting(true);
+    try {
+      const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
 
-            const { data, error } = await submitRating({
-                listing_id: Number(normalizedListingId),
-                rating: rating,
-            });
+      if (!normalizedListingId || normalizedListingId === 'undefined') {
+        Alert.alert('Error', 'Invalid listing ID. Please try again.');
+        return;
+      }
 
-            if (error) {
-                throw new Error(error);
-            }
+      console.log('Submitting rating:', {
+        listing_id: Number(normalizedListingId),
+        rating,
+      });
 
-            Alert.alert('Thank You!', 'Your rating has been submitted successfully.', [
-                {
-                    text: 'OK',
-                    onPress: () => router.back(),
-                },
-            ]);
-        } catch (error: any) {
-            console.error('Rating submission error:', error);
-            Alert.alert('Submission Error', error.message || 'Unable to submit review. Please try again later.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+      const { error } = await submitRating({
+        listing_id: Number(normalizedListingId),
+        rating,
+      });
 
-    return (
-        <>
-            <StatusBar />
-            <SafeAreaViewContainer>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={{ flex: 1 }}
-                >
-                    <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-                        {/* Header */}
-                        <Header>
-                            <HeaderTitle>Rate Your Experience</HeaderTitle>
-                            <HeaderSubtitle>How was the this service?</HeaderSubtitle>
-                        </Header>
+      if (error) throw new Error(error);
 
-                        {/* Star Rating */}
-                        <RatingSection>
-                            <RatingLabel>How would you rate this service?</RatingLabel>
-                            <StarsContainer>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <TouchableOpacity
-                                        key={star}
-                                        onPress={() => handleStarPress(star)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Star
-                                            size={48}
-                                            color="#FCD34D"
-                                            fill={star <= rating ? '#FCD34D' : 'transparent'}
-                                            strokeWidth={2}
-                                        />
-                                    </TouchableOpacity>
-                                ))}
-                            </StarsContainer>
-                            {rating > 0 && (
-                                <RatingText>
-                                    {rating === 1 && 'Poor'}
-                                    {rating === 2 && 'Fair'}
-                                    {rating === 3 && 'Good'}
-                                    {rating === 4 && 'Very Good'}
-                                    {rating === 5 && 'Excellent'}
-                                </RatingText>
-                            )}
-                        </RatingSection>
+      Alert.alert('Thank You!', 'Your rating has been submitted successfully.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      console.error('Rating submission error:', error);
+      Alert.alert('Submission Error', error.message || 'Unable to submit review. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-                        {/* Action Button */}
-                        <ButtonsContainer>
-                            <SubmitButton
-                                onPress={handleSubmit}
-                                disabled={isSubmitting || rating === 0}
-                                opacity={isSubmitting || rating === 0 ? 0.5 : 1}
-                            >
-                                <ButtonText>
-                                    {isSubmitting ? 'Submitting...' : 'Submit Rating'}
-                                </ButtonText>
-                            </SubmitButton>
-                        </ButtonsContainer>
-                    </ScrollContainer>
-                </KeyboardAvoidingView>
-            </SafeAreaViewContainer>
-        </>
-    );
+  return (
+    <>
+      <StatusBar />
+      <SafeAreaViewContainer>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
+            <Header>
+              <HeaderTitle>Rate Your Experience</HeaderTitle>
+              <HeaderSubtitle>How was this service?</HeaderSubtitle>
+            </Header>
+
+            <RatingSection>
+              <RatingLabel>How would you rate this service?</RatingLabel>
+              <StarsContainer>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity key={star} onPress={() => handleStarPress(star)} activeOpacity={0.7}>
+                    <Star size={48} color="#FCD34D" fill={star <= rating ? '#FCD34D' : 'transparent'} strokeWidth={2} />
+                  </TouchableOpacity>
+                ))}
+              </StarsContainer>
+              {rating > 0 && (
+                <RatingText>
+                  {rating === 1 && 'Poor'}
+                  {rating === 2 && 'Fair'}
+                  {rating === 3 && 'Good'}
+                  {rating === 4 && 'Very Good'}
+                  {rating === 5 && 'Excellent'}
+                </RatingText>
+              )}
+            </RatingSection>
+
+            <ButtonsContainer>
+              <SubmitButton onPress={handleSubmit} disabled={isSubmitting || rating === 0} opacity={isSubmitting || rating === 0 ? 0.5 : 1}>
+                <ButtonText>{isSubmitting ? 'Submitting...' : 'Submit Rating'}</ButtonText>
+              </SubmitButton>
+            </ButtonsContainer>
+          </ScrollContainer>
+        </KeyboardAvoidingView>
+      </SafeAreaViewContainer>
+    </>
+  );
 };
 
 export default RateService;
 
 const Header = styled.View`
-    margin-bottom: 24px;
+  margin-bottom: 24px;
 `;
-
 const HeaderTitle = styled.Text`
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
 `;
-
 const HeaderSubtitle = styled.Text`
-    font-size: 14px;
-    color: #6B7280;
+  font-size: 14px;
+  color: #6b7280;
 `;
-
 const RatingSection = styled.View`
-    align-items: center;
-    margin-bottom: 32px;
+  align-items: center;
+  margin-bottom: 32px;
 `;
-
 const RatingLabel = styled.Text`
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-    margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 20px;
 `;
-
 const StarsContainer = styled.View`
-    flex-direction: row;
-    gap: 12px;
-    margin-bottom: 12px;
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 12px;
 `;
-
 const RatingText = styled.Text`
-    font-size: 18px;
-    font-weight: 600;
-    color: #2B61A6;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2b61a6;
 `;
-
 const ButtonsContainer = styled.View`
-    gap: 12px;
-    margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 16px;
 `;
-
 const SubmitButton = styled.TouchableOpacity<{ opacity: number }>`
-    background-color: #2B61A6;
-    border-radius: 50px;
-    padding-vertical: 14px;
-    align-items: center;
-    opacity: ${(props) => props.opacity};
+  background-color: #2b61a6;
+  border-radius: 50px;
+  padding-vertical: 14px;
+  align-items: center;
+  opacity: ${(props) => props.opacity};
 `;
-
 const ButtonText = styled.Text`
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
 `;
