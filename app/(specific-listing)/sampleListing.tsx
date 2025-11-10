@@ -5,8 +5,9 @@ import { Alert, Image, ImageBackground, ScrollView, StyleSheet } from 'react-nat
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { supabase } from '../../libs/supabase';
-import { sendListingAcceptedEmail } from '../../services/emailNotifications';
+import { sendListingStatusEmail } from '../../services/emailNotifications';
 import { acceptListing, completeListing } from '../../services/listings';
+import { getAverageRating, getRatingByListingId } from '../../services/ratings';
 import DocumentViewer from './viewDocs';
 
 const SampleListing = () => {
@@ -34,10 +35,16 @@ const SampleListing = () => {
     const [isLoadingDocs, setIsLoadingDocs] = useState(true);
     const [userRole, setUserRole] = useState<string>('');
     const [existingRating, setExistingRating] = useState<number | null>(null);
+    const [averageRating, setAverageRating] = useState<number>(0);
+    const [ratingCount, setRatingCount] = useState<number>(0);
+    const [isLoadingRating, setIsLoadingRating] = useState(true);
+    const [isCreator, setIsCreator] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string>('');
     
     useEffect(() => {
         loadDocumentCount();
         loadUserRoleAndRating();
+        loadRatings();
     }, [listingId]);
     
     // Timer effect for completing listing after 15 seconds
@@ -89,6 +96,8 @@ const SampleListing = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             
+            setCurrentUserId(user.id);
+            
             const { data: profile } = await supabase
                 .from('Profiles')
                 .select('role')
@@ -98,9 +107,22 @@ const SampleListing = () => {
             const role = profile?.role?.toLowerCase() || '';
             setUserRole(role);
             
-            if (role === 'csr_rep' || role === 'platform_manager') {
-                const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+            // Check if current user is the listing creator
+            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+            
+            if (normalizedListingId) {
+                const { data: listing } = await supabase
+                    .from('Listings')
+                    .select('created_by')
+                    .eq('id', normalizedListingId)
+                    .single();
                 
+                if (listing && listing.created_by === user.id) {
+                    setIsCreator(true);
+                }
+            }
+            
+            if (role === 'csr_rep' || role === 'platform_manager') {
                 const { data: ratingData } = await supabase
                     .from('service_ratings')
                     .select('rating')
@@ -113,6 +135,39 @@ const SampleListing = () => {
             }
         } catch (error) {
             console.error('Error loading user role and rating:', error);
+        }
+    };
+    
+    const loadRatings = async () => {
+        try {
+            setIsLoadingRating(true);
+            const normalizedListingId = Array.isArray(listingId) ? listingId[0] : listingId;
+            
+            if (!normalizedListingId) {
+                setIsLoadingRating(false);
+                return;
+            }
+            
+            // Get average rating
+            const { average, count } = await getAverageRating(Number(normalizedListingId));
+            setAverageRating(average || 0);
+            setRatingCount(count || 0);
+            
+            // Check if current user has rated
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: userRating } = await getRatingByListingId(
+                    Number(normalizedListingId),
+                    user.id
+                );
+                if (userRating) {
+                    setExistingRating(userRating.rating);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading ratings:', error);
+        } finally {
+            setIsLoadingRating(false);
         }
     };
     
@@ -172,15 +227,19 @@ Status: ${status}`.trim();
                 return;
             }
             
+            // Update listing status to 'accepted'
             await acceptListing(normalizedListingId);
             
-            await sendListingAcceptedEmail({
+            // Send acceptance email
+            await sendListingStatusEmail({
                 listingId: normalizedListingId,
                 category: (Array.isArray(category) ? category[0] : category) || 'N/A',
                 description: (Array.isArray(description) ? description[0] : description) || 'N/A',
                 address: (Array.isArray(address) ? address[0] : address) || 'N/A',
                 startTime: (Array.isArray(startTime) ? startTime[0] : startTime) || 'N/A',
-                duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A'
+                duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A',
+                emailType: 'accepted',
+                recipientEmail: 'monasterypin@gmail.com'
             });
             
             // Disable button and start countdown
@@ -211,11 +270,24 @@ Status: ${status}`.trim();
                 return;
             }
             
+            // Update listing status to 'completed'
             await completeListing(normalizedListingId);
+            
+            // Send completion email
+            await sendListingStatusEmail({
+                listingId: normalizedListingId,
+                category: (Array.isArray(category) ? category[0] : category) || 'N/A',
+                description: (Array.isArray(description) ? description[0] : description) || 'N/A',
+                address: (Array.isArray(address) ? address[0] : address) || 'N/A',
+                startTime: (Array.isArray(startTime) ? startTime[0] : startTime) || 'N/A',
+                duration: (Array.isArray(duration) ? duration[0] : duration) || 'N/A',
+                emailType: 'completed',
+                recipientEmail: 'monasterypin@gmail.com'
+            });
             
             Alert.alert(
                 'Completed',
-                'Listing has been marked as completed!',
+                'Listing has been marked as completed! Email sent to monasterypin@gmail.com',
                 [{ text: 'OK', onPress: () => router.back() }]
             );
             
@@ -390,6 +462,50 @@ Status: ${status}`.trim();
                         </ChatButton>
                     </Row>
                     
+                    {/* Rating Display Section - Show to everyone on completed listings */}
+                    {isCompleted && !isLoadingRating && (
+                        <RatingDisplaySection>
+                            <RatingHeader>
+                                <Star size={20} color="#FBBF24" fill="#FBBF24" />
+                                <RatingHeaderText>Service Rating</RatingHeaderText>
+                            </RatingHeader>
+                            
+                            {ratingCount > 0 ? (
+                                <>
+                                    <RatingScoreRow>
+                                        <RatingScore>{averageRating.toFixed(1)}</RatingScore>
+                                        <RatingOutOf>/ 5.0</RatingOutOf>
+                                    </RatingScoreRow>
+                                    
+                                    <StarsDisplayRow>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                size={24}
+                                                color="#FBBF24"
+                                                fill={star <= Math.round(averageRating) ? '#FBBF24' : 'transparent'}
+                                                strokeWidth={2}
+                                            />
+                                        ))}
+                                    </StarsDisplayRow>
+                                    
+                                    {isCreator && (
+                                        <UserRatingBadge>
+                                            <Star size={16} color="#2B61A6" fill="#2B61A6" />
+                                            <UserRatingText>You rated: {averageRating.toFixed(1)}/5</UserRatingText>
+                                        </UserRatingBadge>
+                                    )}
+                                </>
+                            ) : (
+                                <NoRatingYetText>
+                                    {isCreator 
+                                        ? 'You haven\'t rated this service yet.' 
+                                        : 'Service requester hasn\'t rated yet.'}
+                                </NoRatingYetText>
+                            )}
+                        </RatingDisplaySection>
+                    )}
+                    
                     <ApplyButton 
                         disabled={isButtonDisabled || isAccepting || isCompleted}
                         onPress={handleAcceptListing}
@@ -404,7 +520,7 @@ Status: ${status}`.trim();
                                 : isCompleted 
                                     ? 'Service Completed'
                                     : countdown !== null
-                                        ? `Accepted`
+                                        ? `Accepted - Completing in ${countdown}s`
                                         : isAccepted
                                             ? 'Already Accepted'
                                             : 'Apply now'
@@ -414,14 +530,18 @@ Status: ${status}`.trim();
                     
                     {isCompleted && (
                         <>
-                            {userRole === 'pin' && (
+                            {/* Show Rate Service button only to the listing creator (PIN user) */}
+                            {isCreator && userRole === 'pin' && (
                                 <RateServiceButton onPress={handleRateService}>
                                     <Star size={20} color="#FBBF24" fill="#FBBF24" />
-                                    <RateServiceButtonText>Rate Service</RateServiceButtonText>
+                                    <RateServiceButtonText>
+                                        {ratingCount > 0 ? 'View Your Rating' : 'Rate Service'}
+                                    </RateServiceButtonText>
                                 </RateServiceButton>
                             )}
                             
-                            {(userRole === 'csr_rep' || userRole === 'platform_manager') && (
+                            {/* Old rating display for CSR/Platform Manager - Remove or keep for reference */}
+                            {(userRole === 'csr_rep' || userRole === 'platform_manager') && !isCreator && (
                                 <RatingDisplayContainer>
                                     <RatingLabel>Service Rating</RatingLabel>
                                     {existingRating ? (
@@ -728,4 +848,82 @@ const NoRatingText = styled.Text`
     font-size: 14px;
     color: #92400E;
     font-style: italic;
+`;
+
+// New Rating Display Components
+const RatingDisplaySection = styled.View`
+    background-color: #FFFBEB;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-width: 2px;
+    border-color: #FCD34D;
+`;
+
+const RatingHeader = styled.View`
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+`;
+
+const RatingHeaderText = styled.Text`
+    font-size: 18px;
+    font-weight: 600;
+    color: #92400E;
+`;
+
+const RatingScoreRow = styled.View`
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    margin-bottom: 12px;
+`;
+
+const RatingScore = styled.Text`
+    font-size: 48px;
+    font-weight: 700;
+    color: #92400E;
+`;
+
+const RatingOutOf = styled.Text`
+    font-size: 24px;
+    font-weight: 500;
+    color: #92400E;
+    margin-left: 4px;
+`;
+
+const StarsDisplayRow = styled.View`
+    flex-direction: row;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 12px;
+`;
+
+
+const UserRatingBadge = styled.View`
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: #DBEAFE;
+    padding: 8px 16px;
+    border-radius: 20px;
+    align-self: center;
+    margin-top: 8px;
+`;
+
+const UserRatingText = styled.Text`
+    font-size: 14px;
+    font-weight: 600;
+    color: #2B61A6;
+`;
+
+const NoRatingYetText = styled.Text`
+    text-align: center;
+    font-size: 14px;
+    color: #92400E;
+    font-style: italic;
+    padding: 20px 0;
 `;
