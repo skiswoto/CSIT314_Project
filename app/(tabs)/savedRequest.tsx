@@ -39,6 +39,22 @@ const SavedRequests = () => {
     ]);
   };
 
+  const handleViewListing = (listing: any) => {
+    router.push({
+      pathname: '/(specific-listing)/sampleListing',
+      params: {
+        listingId: listing.id,
+        category: listing.category,
+        description: listing.description,
+        address: listing.street_address,
+        startTime: listing.start_time,
+        duration: listing.duration,
+        urgency: listing.urgency,
+        status: listing.status
+      }
+    });
+  };
+
   const bg = (u?: string) => (u === 'High' ? '#FEE2E2' : u === 'Medium' ? '#FFEDD5' : u === 'Low' ? '#DCFCE7' : '#F3F4F6');
   const fg = (u?: string) => (u === 'High' ? '#B91C1C' : u === 'Medium' ? '#C2410C' : u === 'Low' ? '#166534' : '#374151');
 
@@ -58,7 +74,7 @@ const SavedRequests = () => {
             </EmptyState>
           ) : (
             items.map(({ listing }) => (
-              <RequestCard key={listing.id}>
+              <RequestCard key={listing.id} onPress={() => handleViewListing(listing)}>
                 <CardTop>
                   <InfoContainer>
                     <PinName>{listing.category ?? `Listing #${listing.id}`}</PinName>
@@ -98,7 +114,7 @@ export default SavedRequests;
 const EmptyState = styled.View`align-items:center; justify-content:center; padding-vertical:60px; gap:8px;`;
 const EmptyStateText = styled.Text`font-size:16px; font-weight:600; color:#6B7280;`;
 const EmptyStateSubText = styled.Text`font-size:14px; font-weight:400; color:#9CA3AF; text-align:center;`;
-const RequestCard = styled.View`background:#FFF; border-radius:16px; border-width:1px; border-color:#E5E7EB; padding:20px; margin-bottom:16px; elevation:2;`;
+const RequestCard = styled.TouchableOpacity`background:#FFF; border-radius:16px; border-width:1px; border-color:#E5E7EB; padding:20px; margin-bottom:16px; elevation:2;`;
 const CardTop = styled.View`flex-direction:row; justify-content:space-between; align-items:flex-start; margin-bottom:12px;`;
 const InfoContainer = styled.View`flex:1; gap:4px;`;
 const PinName = styled.Text`font-size:18px; font-weight:600; color:#111827;`;
