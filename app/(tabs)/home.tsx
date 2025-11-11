@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StatusBar, Text } from 'react-native';
+import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { hasPermission } from '../../config/permissions';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
@@ -298,7 +298,6 @@ const Home = () => {
 
                       <ActionButton onPress={handleViewRequestClick}> {/* View Request Button */}
                         <MoveRight size={20} color="#6B7280" />
-                        <Text>View Request</Text> {/* Optional: Add some text here for clarity */}
                       </ActionButton>
                     </CardActions>
                   </CardHeader>

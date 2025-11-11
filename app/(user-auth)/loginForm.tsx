@@ -69,23 +69,25 @@ const LoginForm: React.FC = () => {
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Email</Text>
                 <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                autoCapitalize="none"
-                keyboardType='email-address'
-                value={email}
-                onChangeText={(text: string) => setEmail(text)}
+                    style={styles.input}
+                    placeholder="Enter your email"
+                    autoCapitalize="none"
+                    keyboardType='email-address'
+                    value={email}
+                    onChangeText={(text: string) => setEmail(text)}
+                    placeholderTextColor={'#D0D0D0'}
                 />
             </View>
             <View style={styles.inputContainer}>
                 <Text style={styles.label}>Password</Text>
                 <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                secureTextEntry
-                autoCapitalize="none"
-                value={password}
-                onChangeText={(text: string) => setPassword(text)}
+                    style={styles.input}
+                    placeholder="Enter your password"
+                    secureTextEntry
+                    autoCapitalize="none"
+                    value={password}
+                    onChangeText={(text: string) => setPassword(text)}
+                    placeholderTextColor={'#D0D0D0'}
                 />
             </View>
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>

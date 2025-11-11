@@ -7,6 +7,7 @@ export const PERMISSIONS = {
     'csr_rep': {
         canViewAllListings: true,
         canViewCSRStats: true,
+        canApplyListing: true,
     },
     'platform_manager': {
         canViewAllListings: true,
