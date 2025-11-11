@@ -4,13 +4,56 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, StatusBar } from 'react-native';
+import { ActivityIndicator, StatusBar, Text } from 'react-native';
 import { styled } from 'styled-components/native';
 import { hasPermission } from '../../config/permissions';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
+// services/clickTracker.js (or wherever you are defining this function)
+import { supabase } from '@/libs/supabase'; // ensure this is the correct import for supabase
+
+export const incrementMonthClick = async () => {
+  try {
+    const currentMonth = new Date().toLocaleString('default', { month: 'short' }); // e.g., 'Nov' for November
+    const { data: row, error: fetchError } = await supabase
+      .from('pindashboard')
+      .select('clicks')
+      .eq('month', currentMonth)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116' means no row found
+      throw fetchError;
+    }
+
+    let newClicks = 1;
+    if (row) {
+      newClicks = row.clicks + 1;
+      const { error } = await supabase
+        .from('pindashboard')
+        .update({ clicks: newClicks })
+        .eq('month', currentMonth);
+
+      if (error) {
+        throw error;
+      }
+    } else {
+      const { error } = await supabase
+        .from('pindashboard')
+        .insert({ month: currentMonth, clicks: newClicks });
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    console.log('Click count updated or inserted');
+  } catch (error) {
+    console.error('Error updating click count:', error);
+  }
+};
+
 
 const Home = () => {
   const router = useRouter();
@@ -217,19 +260,27 @@ const Home = () => {
             visibleListings.map((listing: any) => (
               <ListingCard
                 key={listing.id}
-                onPress={() => router.navigate({
-                  pathname: '/(specific-listing)/sampleListing',
-                  params: {
-                    listingId: String(listing.id),
-                    category: listing.category,
-                    description: listing.description,
-                    address: listing.street_address,
-                    startTime: listing.start_time,
-                    duration: listing.duration,
-                    urgency: listing.urgency,
-                    status: listing.status
+                onPress={async () => {
+                  console.log('Listing card clicked'); // For debugging
+                  try {
+                    await incrementMonthClick();
+                    router.navigate({
+                      pathname: '/(specific-listing)/sampleListing',
+                      params: {
+                        listingId: String(listing.id),
+                        category: listing.category,
+                        description: listing.description,
+                        address: listing.street_address,
+                        startTime: listing.start_time,
+                        duration: listing.duration,
+                        urgency: listing.urgency,
+                        status: listing.status
+                      }
+                    });
+                  } catch (e) {
+                    console.error('Error on listing click:', e);
                   }
-                })}
+                }}
               >
                 <CardContent>
                   <CardHeader>
@@ -238,7 +289,7 @@ const Home = () => {
                     </CategoryBadge>
 
                     <CardActions>
-                      <ActionButton onPress={() => handleToggleSave(listing.id)}>
+                      <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
                         <Heart
                           size={20}
                           color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
@@ -246,8 +297,9 @@ const Home = () => {
                         />
                       </ActionButton>
 
-                      <ActionButton>
+                      <ActionButton onPress={handleViewRequestClick}> {/* View Request Button */}
                         <MoveRight size={20} color="#6B7280" />
+                        <Text>View Request</Text> {/* Optional: Add some text here for clarity */}
                       </ActionButton>
                     </CardActions>
                   </CardHeader>
@@ -503,6 +555,9 @@ const CardActions = styled.View`
 `;
 
 const ActionButton = styled.Pressable`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
   background-color: #F9FAFB;
   padding: 8px;
   border-radius: 20px;
@@ -636,3 +691,13 @@ const SigninToViewListingsText = styled.Text`
   font-weight: 500;
   text-align: center;
 `;
+
+const handleViewRequestClick = async () => {
+  console.log('View Request clicked');
+  try {
+    await incrementMonthClick(); // Ensure that the click count is updated in the database first
+    router.push('/(manage-request)/viewStats1'); // Then navigate to the next screen
+  } catch (e) {
+    console.error('Error recording click:', e); // Catch any errors during the increment or navigation
+  }
+};
