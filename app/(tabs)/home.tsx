@@ -1,4 +1,5 @@
 import { userAuthStore } from '@/global/userAuthStore';
+import { supabase } from '@/libs/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -11,8 +12,6 @@ import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
-// services/clickTracker.js (or wherever you are defining this function)
-import { supabase } from '@/libs/supabase'; // ensure this is the correct import for supabase
 
 export const incrementMonthClick = async () => {
   try {
@@ -234,7 +233,7 @@ const Home = () => {
         </HeaderSection>
 
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-          {getActiveFilterCount() > 0 && (
+          {/* {getActiveFilterCount() > 0 && (
             <ActiveFiltersContainer>
               <ActiveFiltersText>
                 {getActiveFilterCount()} filter{getActiveFilterCount() > 1 ? 's' : ''} applied
@@ -243,7 +242,7 @@ const Home = () => {
                 <ClearFiltersText>Clear all</ClearFiltersText>
               </ClearFiltersButton>
             </ActiveFiltersContainer>
-          )}
+          )} */}
 
           {isLoading && (
             <LoadingContainer>
