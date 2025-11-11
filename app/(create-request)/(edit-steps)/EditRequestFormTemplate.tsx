@@ -142,7 +142,7 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
                     category: updatedListingData.category,
                     description: updatedListingData.description,
                     address: updatedListingData.street_address,
-                    startTime: updatedListingData.start_time,
+                    startTime: updatedListingData.start_time ?? 'N/A',
                     duration: updatedListingData.duration || 'N/A',
                     emailType: 'edited',
                     recipientEmail: 'monasterypin@gmail.com',
@@ -162,12 +162,12 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
 
     // ✅ keep listingData when going to next step
     const nextIndex = Math.min(currentStep + 1, lastIndex);
-    nextStep();
-    router.push({
-        pathname: stepsArray[nextIndex],
-        params: { listingData: JSON.stringify(originalData) },
-    });
-};
+        nextStep();
+        router.push({
+            pathname: stepsArray[nextIndex],
+            params: { listingData: JSON.stringify(originalData) },
+        });
+    };
 
     
     const handlePreviousStep = () => {
