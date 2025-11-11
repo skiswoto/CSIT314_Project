@@ -162,12 +162,6 @@ const Step4 = () => {
     const handleDocumentPicker = async () => {
         try {
             setUploadError(null);
-            
-            // Check if user is authenticated
-            if (!user?.id) {
-                Alert.alert("Authentication Required", "Please log in to upload documents.");
-                return;
-            }
 
             const result = await DocumentPicker.getDocumentAsync({
                 type: ['application/pdf', 'image/*'],
