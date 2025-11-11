@@ -76,12 +76,6 @@ const Step4 = () => {
         try {
             setUploadError(null);
             
-            // Check if user is authenticated
-            if (!user?.id) {
-                Alert.alert("Authentication Required", "Please log in to upload documents.");
-                return;
-            }
-
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
             
             if (!permissionResult.granted) {
