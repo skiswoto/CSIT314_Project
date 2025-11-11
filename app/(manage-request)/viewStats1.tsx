@@ -1,9 +1,9 @@
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { StatusBar, View, Alert, Modal, Animated, Dimensions } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Dimensions, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
-import { useEffect, useRef } from 'react';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -11,7 +11,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const requestData = {
     id: 1,
     pinName: 'Emily Wong',
-    pinProfile: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop', 
+    pinProfile: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
     requestInfo: 'Need assistance with grocery shopping',
     dateCreated: '20 Oct 2025',
     location: 'Jurong West',
@@ -22,6 +22,20 @@ const ViewRequest = () => {
     const router = useRouter();
     const { id } = useLocalSearchParams();
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        // Simulate a delay or API call to fetch the request
+        setTimeout(() => {
+            if (!requestData) {
+                setErrorMessage('Failed to load request data.');
+            }
+            setLoading(false);
+        }, 1000);
+    }, []);
 
     useEffect(() => {
         // Slide up animation when component mounts
@@ -73,6 +87,26 @@ const ViewRequest = () => {
         router.push('/(manage-request)/viewStats2');
     };
 
+    if (loading) {
+        return (
+            <SafeAreaViewContainer>
+                <LoadingWrapper>
+                    <ActivityIndicator size="large" color="#0000ff" />
+                </LoadingWrapper>
+            </SafeAreaViewContainer>
+        );
+    }
+
+    if (errorMessage) {
+        return (
+            <SafeAreaViewContainer>
+                <ErrorWrapper>
+                    <AlertText>{errorMessage}</AlertText>
+                </ErrorWrapper>
+            </SafeAreaViewContainer>
+        );
+    }
+
     return (
         <>
             <StatusBar />
@@ -93,7 +127,7 @@ const ViewRequest = () => {
                 {/* Sliding Modal Content */}
                 <AnimatedModalContent style={{ transform: [{ translateY: slideAnim }] }}>
                     <ModalHandle />
-                    
+
                     <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
                         {/* Profile Section */}
                         <ProfileSection>
@@ -133,7 +167,7 @@ const TopBar = styled.View`
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding-top: 70px; 
+    padding-top: 70px;
     padding-horizontal: 20px;
     margin-bottom: 24px;
     z-index: 10;
@@ -278,3 +312,23 @@ const DeleteButtonText = styled.Text`
     font-size: 17px;
     font-weight: 600;
 `;
+
+const LoadingWrapper = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ErrorWrapper = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+`;
+
+const AlertText = styled.Text`
+  font-size: 18px;
+  color: #FF0000;
+  text-align: center;
+`;
+
