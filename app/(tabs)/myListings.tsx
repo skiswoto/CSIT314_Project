@@ -117,6 +117,22 @@ const MyListings = () => {
     );
   };
 
+  const handleViewListing = (listing: DBListing) => {
+    router.push({
+      pathname: '/(specific-listing)/sampleListing',
+      params: {
+        listingId: listing.id,
+        category: listing.category,
+        description: listing.description,
+        address: listing.street_address,
+        startTime: listing.time,
+        duration: listing.duration,
+        urgency: listing.urgency,
+        status: listing.status
+      }
+    });
+  };
+
   return (
     <>
       <StatusBar />
@@ -157,19 +173,21 @@ const MyListings = () => {
                 </ActionButtons>
               </CardHeader>
 
-              <RequestInfo>{listing.description || 'No description'}</RequestInfo>
+              <RequestInfo onPress={() => handleViewListing(listing)}>
+                {listing.description || 'No description'}
+              </RequestInfo>
 
               <CardFooter>
-                <FooterInfo>
+                <FooterInfo onPress={() => handleViewListing(listing)}>
                   <FooterLabel>Created:</FooterLabel>
                   <FooterValue>{listing.created_at ? new Date(listing.created_at).toLocaleDateString() : '—'}</FooterValue>
                 </FooterInfo>
                 {listing.category ? (
-                  <FooterInfo>
+                  <FooterInfo onPress={() => handleViewListing(listing)}>
                     <FooterLabel>Category:</FooterLabel>
                     <FooterValue>{listing.category}</FooterValue>
                   </FooterInfo>
-                ) : <View />}
+                ) : <View onStartShouldSetResponder={() => true} onResponderRelease={() => handleViewListing(listing)} />}
               </CardFooter>
             </ListingCard>
           ))}
