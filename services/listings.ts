@@ -137,6 +137,32 @@ export const acceptListing = async (listingId: string) => {
   return data[0];
 };
 
+// Complete a listing
+export const completeListing = async (listingId: string) => {
+  const cleanId = listingId.toString().replace(/[\\"']/g, '').trim();
+  const numericId = parseInt(cleanId, 10);
+
+  if (isNaN(numericId) || numericId <= 0) {
+    throw new Error('Invalid listing ID');
+  }
+
+  const { data, error } = await supabase
+    .from('Listings')
+    .update({ status: 'completed' })
+    .eq('id', numericId)
+    .select();
+
+  if (error) {
+    throw new Error(`Failed to complete listing: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    throw new Error(`Update returned no rows for listing ${numericId}`);
+  }
+
+  return data[0];
+};
+
 export const getAllListings = async (filters?: ListingFilters) => {
   let query = supabase
     .from('Listings')

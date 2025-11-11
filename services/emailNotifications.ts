@@ -7,11 +7,13 @@ export interface ListingEmailData {
   address: string
   startTime: string
   duration: string
+  emailType: 'accepted' | 'completed'
+  recipientEmail?: string
 }
 
-export const sendListingAcceptedEmail = async (listingData: ListingEmailData) => {
+export const sendListingStatusEmail = async (listingData: ListingEmailData) => {
   try {
-    console.log('📧 Sending email notification...')
+    console.log('📧 Sending status email notification...', listingData.emailType)
     
     const { data, error } = await supabase.functions.invoke('send-listing-email', {
       body: listingData
@@ -29,4 +31,15 @@ export const sendListingAcceptedEmail = async (listingData: ListingEmailData) =>
     console.error('❌ Failed to send email:', error)
     throw error
   }
+}
+
+// Legacy function for backward compatibility
+export const sendListingAcceptedEmail = async (
+  listingData: Omit<ListingEmailData, 'emailType' | 'recipientEmail'>
+) => {
+  return sendListingStatusEmail({
+    ...listingData,
+    emailType: 'accepted',
+    recipientEmail: 'monasterypin@gmail.com'
+  })
 }

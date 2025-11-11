@@ -18,6 +18,28 @@ export const submitRating = async (ratingData: ServiceRating) => {
       throw new Error('User not authenticated');
     }
 
+    // Get the listing to check status and creator
+    const { data: listing, error: listingError } = await supabase
+      .from('Listings')
+      .select('status, created_by')
+      .eq('id', ratingData.listing_id)
+      .single();
+
+    if (listingError) {
+      throw new Error('Failed to verify listing status');
+    }
+
+    // Check if listing is completed
+    if (listing.status !== 'completed') {
+      throw new Error('You can only rate completed services');
+    }
+
+    // Check if current user is the listing creator
+    if (listing.created_by !== user.id) {
+      throw new Error('Only the service requester (PIN user who created the listing) can rate this service');
+    }
+
+    // Check if the creator has already rated this listing
     const { data: existingRating } = await supabase
       .from('service_ratings')
       .select('*')
@@ -26,7 +48,7 @@ export const submitRating = async (ratingData: ServiceRating) => {
       .single();
 
     if (existingRating) {
-      throw new Error('You have already rated this service');
+      throw new Error('You have already rated this service. Ratings cannot be edited once submitted.');
     }
 
     const { data, error } = await supabase
@@ -88,7 +110,7 @@ export const getRatingByListingId = async (listingId: number, raterId?: string) 
   }
 };
 
-// Get all ratings for a specific listing
+// Get all ratings for a specific listing (should only have one rating per listing)
 export const getRatingsByListingId = async (listingId: number) => {
   try {
     const { data, error } = await supabase
@@ -106,7 +128,7 @@ export const getRatingsByListingId = async (listingId: number) => {
   }
 };
 
-// Get average rating for a listing
+// Get average rating for a listing (should return the single rating if exists)
 export const getAverageRating = async (listingId: number) => {
   try {
     const { data, error } = await supabase
@@ -120,11 +142,11 @@ export const getAverageRating = async (listingId: number) => {
       return { average: 0, count: 0, error: null };
     }
 
-    const sum = data.reduce((acc, curr) => acc + curr.rating, 0);
-    const average = sum / data.length;
+    // Since only the creator can rate, there should only be one rating
+    const rating = data[0].rating;
 
     return {
-      average: Number(average.toFixed(1)),
+      average: Number(rating.toFixed(1)),
       count: data.length,
       error: null
     };
@@ -157,5 +179,47 @@ export const getRatingsByRater = async (raterId: string) => {
   } catch (error: any) {
     console.error('Error fetching rater ratings:', error);
     return { data: null, error: error.message };
+  }
+};
+
+// Check if user can rate a listing (completed, is creator, and not yet rated)
+export const canUserRateListing = async (listingId: number, userId: string) => {
+  try {
+    // Check listing status and creator
+    const { data: listing, error: listingError } = await supabase
+      .from('Listings')
+      .select('status, created_by')
+      .eq('id', listingId)
+      .single();
+
+    if (listingError || !listing) {
+      return { canRate: false, reason: 'Listing not found' };
+    }
+
+    if (listing.status !== 'completed') {
+      return { canRate: false, reason: 'Service must be completed before rating' };
+    }
+
+    // Check if user is the listing creator
+    if (listing.created_by !== userId) {
+      return { canRate: false, reason: 'Only the service requester (PIN user who created this listing) can rate this service' };
+    }
+
+    // Check if creator has already rated
+    const { data: existingRating } = await supabase
+      .from('service_ratings')
+      .select('id')
+      .eq('listing_id', listingId)
+      .eq('rated_by', userId)
+      .maybeSingle();
+
+    if (existingRating) {
+      return { canRate: false, reason: 'You have already rated this service' };
+    }
+
+    return { canRate: true, reason: null };
+  } catch (error: any) {
+    console.error('Error checking rating eligibility:', error);
+    return { canRate: false, reason: 'Error checking rating eligibility' };
   }
 };
