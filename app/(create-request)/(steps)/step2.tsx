@@ -18,7 +18,7 @@ const Step2 = () => {
     const MINIMUM_DATE = new Date(CURRENT_DATE)
     MINIMUM_DATE.setDate(MINIMUM_DATE.getDate() + 1)
 
-    const formatDuration = (date: Date): string => {
+    const formatDuration = (date: Date | null): string => {
         if (!date) return 'Duration';
         
         const hours = date.getHours();
@@ -31,29 +31,33 @@ const Step2 = () => {
         return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
     }
 
-    const calculateEndTime = (startTime: Date, duration: Date): string => {
+    const calculateEndTime = (startTime: Date | null, duration: Date | null): string => {
         if (!startTime || !duration) return 'End Time'
 
-        const endTime = new Date(startTime);
-        endTime.setHours(endTime.getHours() + duration.getHours());
-        endTime.setMinutes(endTime.getMinutes() + duration.getMinutes());
-
-        return endTime.toLocaleTimeString();
+        try {
+            const endTime = new Date(startTime);
+            endTime.setHours(endTime.getHours() + duration.getHours());
+            endTime.setMinutes(endTime.getMinutes() + duration.getMinutes());
+    
+            return endTime.toLocaleTimeString();
+        } catch (error) {
+            return 'End Time'
+        }
     }
     return (
         <CreateRequestFormTemplate>
             <StepTitle>When do you need help?</StepTitle>
             <StepSubTitle>Pick when you&apos;d like the volunteer(s) to help and the expected duration</StepSubTitle>
             <>
-                <Card onPress={() => setShowDatePickerModal(true)}>
+                <Card onPress={() => setShowDatePickerModal(!showDatePickerModal)}>
                     <CardTitle $hasValue={!!date}>{date ? date.toLocaleDateString() : 'Date'}</CardTitle>
                     <CalendarFold size={26}/>
                 </Card>
-                <Card onPress={() => setShowStartTimePicker(true)}>
+                <Card onPress={() => setShowStartTimePicker(!showStartTimePicker)}>
                     <CardTitle $hasValue={!!time}>{time ? time.toLocaleTimeString() : 'Start Time'}</CardTitle>
                     <Clock2 size={26}/>
                 </Card>
-                <Card onPress={() => setShowDurationModal(true)}>
+                <Card onPress={() => setShowDurationModal(!showDurationModal)}>
                     <CardTitle $hasValue={!!duration}>{duration ? formatDuration(duration) : 'Duration'}</CardTitle>
                     <Hourglass size={26}/>
                 </Card>
@@ -71,7 +75,7 @@ const Step2 = () => {
                 }}
                 backdropColor={'white'}
             >
-                <Pressable style={styles.overlay} onPress={() => setShowDatePickerModal(false)}>
+                <Pressable style={styles.overlay} onPress={() => setShowDatePickerModal(!showDatePickerModal)}>
                     <View style={styles.modalContent}>
                         <RNDateTimePicker 
                             mode='date'
@@ -87,6 +91,7 @@ const Step2 = () => {
                     </View>
                 </Pressable>
             </Modal>
+            
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -96,7 +101,7 @@ const Step2 = () => {
                 }}
                 backdropColor={'white'}
             >
-                <Pressable style={styles.overlay} onPress={() => setShowStartTimePicker(false)}>
+                <Pressable style={styles.overlay} onPress={() => setShowStartTimePicker(!showStartTimePicker)}>
                     <View style={styles.modalContent}>
                         <RNDateTimePicker 
                             mode='time'
@@ -110,16 +115,17 @@ const Step2 = () => {
                     </View>
                 </Pressable>
             </Modal>
+            
             <Modal
                 animationType="slide"
                 transparent={true}
-                visible={showDurationModal}
-                onRequestClose={() => {
+                visible={showDurationModal && !!time}
+                onRequestClose={() => { 
                     setShowDurationModal(false)
                 }}
                 backdropColor={'white'}
             >
-                <Pressable style={styles.overlay} onPress={() => setShowDurationModal(false)}>
+                <Pressable style={styles.overlay} onPress={() => time && setShowDurationModal(!showDurationModal)}>
                     <View style={styles.modalContent}>
                         <RNDateTimePicker 
                             mode='countdown'
