@@ -8,6 +8,7 @@ export const PERMISSIONS = {
         canViewAllListings: true,
         canViewCSRStats: true,
         canApplyListing: true,
+        canSaveListing: true
     },
     'platform_manager': {
         canViewAllListings: true,

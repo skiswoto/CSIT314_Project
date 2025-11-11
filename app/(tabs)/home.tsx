@@ -13,6 +13,7 @@ import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
 
+
 export const incrementMonthClick = async () => {
   try {
     const currentMonth = new Date().toLocaleString('default', { month: 'short' }); // e.g., 'Nov' for November
@@ -174,6 +175,17 @@ const Home = () => {
     );
   });
 
+  // const HandleViewRequestClick = () => {
+  //   const router = useRouter()
+  //   console.log('View Request clicked');
+  //   try {
+  //     // incrementMonthClick(); // Ensure that the click count is updated in the database first
+  //     router.push('/(manage-request)/viewStats1'); // Then navigate to the next screen
+  //   } catch (e) {
+  //     console.error('Error recording click:', e); // Catch any errors during the increment or navigation
+  //   }
+  // };
+  
   return (
     <>
       <StatusBar />
@@ -262,7 +274,7 @@ const Home = () => {
                 onPress={async () => {
                   console.log('Listing card clicked'); // For debugging
                   try {
-                    await incrementMonthClick();
+                    incrementMonthClick();
                     router.navigate({
                       pathname: '/(specific-listing)/sampleListing',
                       params: {
@@ -287,19 +299,21 @@ const Home = () => {
                       <CategoryBadgeText>{listing.category}</CategoryBadgeText>
                     </CategoryBadge>
 
-                    <CardActions>
-                      <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
-                        <Heart
-                          size={20}
-                          color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
-                          fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
-                        />
-                      </ActionButton>
-
-                      <ActionButton onPress={handleViewRequestClick}> {/* View Request Button */}
-                        <MoveRight size={20} color="#6B7280" />
-                      </ActionButton>
-                    </CardActions>
+                      <CardActions>
+                        {hasPermission(userRole, "canSaveListing") && 
+                          <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
+                            <Heart
+                              size={20}
+                              color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
+                              fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
+                            />
+                          </ActionButton>
+                        }
+                        <ViewListingIcon>
+                          <MoveRight size={20} color="#6B7280" />
+                        </ViewListingIcon>
+                      </CardActions>
+                    
                   </CardHeader>
 
                   <CardBody>
@@ -690,12 +704,13 @@ const SigninToViewListingsText = styled.Text`
   text-align: center;
 `;
 
-const handleViewRequestClick = async () => {
-  console.log('View Request clicked');
-  try {
-    await incrementMonthClick(); // Ensure that the click count is updated in the database first
-    router.push('/(manage-request)/viewStats1'); // Then navigate to the next screen
-  } catch (e) {
-    console.error('Error recording click:', e); // Catch any errors during the increment or navigation
-  }
-};
+const ViewListingIcon = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  background-color: #F9FAFB;
+  padding: 8px;
+  border-radius: 20px;
+  border-width: 1px;
+  border-color: #E5E7EB;
+`
