@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, StatusBar } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Dimensions, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { SafeAreaViewContainer, ScrollContainer } from '../../constants/GlobalStyles';
 
@@ -331,4 +331,3 @@ const AlertText = styled.Text`
   color: #FF0000;
   text-align: center;
 `;
-
