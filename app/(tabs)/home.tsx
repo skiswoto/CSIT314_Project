@@ -297,7 +297,7 @@ const Home = () => {
                     </CategoryBadge>
 
                     <CardActions>
-                      <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
+                      <ActionButton onPress={() => handleToggleSave(listing.id)}>
                         <Heart
                           size={20}
                           color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}

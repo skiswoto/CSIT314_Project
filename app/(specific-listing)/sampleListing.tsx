@@ -194,14 +194,29 @@ const SampleListing = () => {
             default: return '#6B7280';
         }
     };
-    
+
     const formatTime = (time: string | string[] | undefined) => {
         if (!time) return 'Not specified';
         const timeStr = Array.isArray(time) ? time[0] : time;
-        const [hours, minutes] = timeStr.split(':');
-        const hour = parseInt(hours);
+        
+        let hours: string;
+        let minutes: string;
+        
+        if (timeStr.includes('T')) {
+            // It's an ISO datetime string
+            const date = new Date(timeStr);
+            hours = date.getHours().toString();
+            minutes = date.getMinutes().toString().padStart(2, '0');
+        } else {
+            // It's a simple time string (e.g., "13:30" or "13:30:00")
+            const timeParts = timeStr.split(':');
+            hours = timeParts[0];
+            minutes = timeParts[1];
+        }
+        
+        const hour = parseInt(hours, 10);
         const ampm = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
         return `${displayHour}:${minutes} ${ampm}`;
     };
     
