@@ -3,7 +3,7 @@ import { supabase } from '@/libs/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
+import { CheckCircle, Heart, LayoutList, MapPin, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
@@ -65,6 +65,7 @@ const Home = () => {
 
   // --- NEW: search text state
   const [searchText, setSearchText] = useState('');
+
 
   // Saved IDs for heart fill state
   const [savedIds, setSavedIds] = useState<number[]>([]);
@@ -238,10 +239,6 @@ const Home = () => {
               <TabText isActive={activeTab === 'completed'}>Completed</TabText>
             </TabButton>
           </TabBar>
-
-          <SavedNav onPress={() => router.push('/(manage-request)/savedRequest')}>
-            <SavedNavText>Go to Saved</SavedNavText>
-          </SavedNav>
         </HeaderSection>
 
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
@@ -299,21 +296,15 @@ const Home = () => {
                       <CategoryBadgeText>{listing.category}</CategoryBadgeText>
                     </CategoryBadge>
 
-                      <CardActions>
-                        {hasPermission(userRole, "canSaveListing") && 
-                          <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
-                            <Heart
-                              size={20}
-                              color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
-                              fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
-                            />
-                          </ActionButton>
-                        }
-                        <ViewListingIcon>
-                          <MoveRight size={20} color="#6B7280" />
-                        </ViewListingIcon>
-                      </CardActions>
-                    
+                    <CardActions>
+                      <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
+                        <Heart
+                          size={20}
+                          color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
+                          fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
+                        />
+                      </ActionButton>
+                    </CardActions>
                   </CardHeader>
 
                   <CardBody>
@@ -703,14 +694,3 @@ const SigninToViewListingsText = styled.Text`
   font-weight: 500;
   text-align: center;
 `;
-
-const ViewListingIcon = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  background-color: #F9FAFB;
-  padding: 8px;
-  border-radius: 20px;
-  border-width: 1px;
-  border-color: #E5E7EB;
-`
