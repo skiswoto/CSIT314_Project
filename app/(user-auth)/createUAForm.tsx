@@ -102,7 +102,13 @@ export default function CreateUAForm () {
             <Input placeholder="Enter your email" placeholderTextColor="#BABABA" keyboardType="email-address" value={email} onChangeText={(text: string) => setEmail(text)} autoCapitalize='none' />
             <InputTitle>Password</InputTitle>
             <InputContainer>
-                <Input placeholder="Password" placeholderTextColor="#BABABA" value={password} onChangeText={(text: string) => setPassword(text)} autoCapitalize='none' />
+                <Input 
+                    placeholder="Password" 
+                    placeholderTextColor="#BABABA" 
+                    autoCapitalize='none'
+                    onChangeText={(text: string) => setPassword(text)}
+                    secureTextEntry={hidePassword}
+                />
                 <RevealContainer onPress={handleRevealPassword}>
                     {!hidePassword ? <Eye /> : <EyeOff />}
                 </RevealContainer>
@@ -114,6 +120,7 @@ export default function CreateUAForm () {
                     placeholderTextColor="#BABABA" 
                     autoCapitalize='none'
                     onChangeText={(text: string) => setConfirmPassword(text)}
+                    secureTextEntry={hidePassword}
                 />
                 <RevealContainer onPress={handleRevealPassword}>
                     {!hidePassword ? <Eye /> : <EyeOff />}

@@ -3,12 +3,14 @@ import { ArrowLeft, Calendar, CheckCircle, Clock, Download, FileText, Heart, Map
 import { useEffect, useState } from 'react';
 import { Alert, Image, ImageBackground, ScrollView, StyleSheet } from 'react-native';
 import { styled } from 'styled-components/native';
+import { hasPermission } from '../../config/permissions';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import { supabase } from '../../libs/supabase';
 import { sendListingStatusEmail } from '../../services/emailNotifications';
 import { acceptListing, completeListing } from '../../services/listings';
 import { getAverageRating, getRatingByListingId } from '../../services/ratings';
 import DocumentViewer from './viewDocs';
+
 
 const SampleListing = () => {
     const router = useRouter();
@@ -514,7 +516,7 @@ Status: ${status}`.trim();
                     )}
                     
                     {/* Apply Button - Only show to CSR/Platform Manager users, not to PIN users */}
-                    {!isCompleted && (userRole === 'csr_rep' || userRole === 'platform_manager') && (
+                    {!isCompleted && hasPermission(userRole, 'canApplyListing') && (
                         <ApplyButton 
                             disabled={isButtonDisabled || isAccepting}
                             onPress={handleAcceptListing}

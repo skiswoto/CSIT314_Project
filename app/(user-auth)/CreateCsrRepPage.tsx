@@ -8,7 +8,7 @@ import ModalTemplate from './modalTemplate';
 import { TopBar } from "./signUp";
 
 
-export default function CreateCsrRepPage({ setScreen }: any) {
+export default function CreateCsrRepPage() {
     const [terms, setTerms] = useState(false);
     const [hidePassword, setHidePassword] = useState(true);
     const router = useRouter()
