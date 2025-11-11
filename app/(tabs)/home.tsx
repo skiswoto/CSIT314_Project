@@ -1,14 +1,57 @@
 import { userAuthStore } from '@/global/userAuthStore';
+import { supabase } from '@/libs/supabase';
+import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen } from 'lucide-react-native';
-import { useState } from 'react';
-import { ActivityIndicator, StatusBar } from 'react-native';
+import { CheckCircle, Heart, LayoutList, MapPin, MoveRight, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, StatusBar, Text } from 'react-native';
 import { styled } from 'styled-components/native';
 import { hasPermission } from '../../config/permissions';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
 import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
+import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
+
+export const incrementMonthClick = async () => {
+  try {
+    const currentMonth = new Date().toLocaleString('default', { month: 'short' }); // e.g., 'Nov' for November
+    const { data: row, error: fetchError } = await supabase
+      .from('pindashboard')
+      .select('clicks')
+      .eq('month', currentMonth)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116' means no row found
+      throw fetchError;
+    }
+
+    let newClicks = 1;
+    if (row) {
+      newClicks = row.clicks + 1;
+      const { error } = await supabase
+        .from('pindashboard')
+        .update({ clicks: newClicks })
+        .eq('month', currentMonth);
+
+      if (error) {
+        throw error;
+      }
+    } else {
+      const { error } = await supabase
+        .from('pindashboard')
+        .insert({ month: currentMonth, clicks: newClicks });
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    console.log('Click count updated or inserted');
+  } catch (error) {
+    console.error('Error updating click count:', error);
+  }
+};
 
 
 const Home = () => {
@@ -18,14 +61,41 @@ const Home = () => {
 
   const user = userAuthStore((s) => s.user);
   const userRole = user?.user_metadata.role;
-  
+
+  // --- NEW: search text state
+  const [searchText, setSearchText] = useState('');
+
+  // Saved IDs for heart fill state
+  const [savedIds, setSavedIds] = useState<number[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          const ids = await fetchMySavedIds();
+          setSavedIds(ids);
+        } catch (e) {
+          console.log('Failed to load saved ids', e);
+        }
+      })();
+    }, [])
+  );
+
+  const handleToggleSave = async (id: number) => {
+    try {
+      const nowSaved = await toggleSave(id);
+      setSavedIds((prev) => (nowSaved ? [...prev, id] : prev.filter((x) => x !== id)));
+    } catch (e) {
+      console.log('toggleSave error', e);
+    }
+  };
+
   // Separate filter states for each tab
   const [availableFilters, setAvailableFilters] = useState<ListingFilters>({
     locations: [],
     serviceTypes: [],
     urgencies: [],
     dateRange: { start: null, end: null },
-    status: 'available' // Always filter for available
+    status: 'available'
   });
 
   const [completedFilters, setCompletedFilters] = useState<ListingFilters>({
@@ -33,57 +103,38 @@ const Home = () => {
     serviceTypes: [],
     urgencies: [],
     dateRange: { start: null, end: null },
-    status: 'completed' // Always filter for completed
+    status: 'completed'
   });
 
-  // Get current filters based on active tab
   const currentFilters = activeTab === 'available' ? availableFilters : completedFilters;
 
-  // Fetch listings based on current tab and filters
   const { data: listings, isLoading, error } = useQuery({
     queryKey: ['listings', activeTab, currentFilters],
     queryFn: () => getAllListings(currentFilters),
   });
 
   const handleApplyFilters = (filters: Omit<ListingFilters, 'status'>) => {
-    // console.log('Applied Filters:', filters);
-    
-    // Update the appropriate filter state based on active tab
     if (activeTab === 'available') {
-      setAvailableFilters({
-        ...filters,
-        status: 'available' // Preserve status
-      });
+      setAvailableFilters({ ...filters, status: 'available' });
     } else {
-      setCompletedFilters({
-        ...filters,
-        status: 'completed' // Preserve status
-      });
+      setCompletedFilters({ ...filters, status: 'completed' });
     }
   };
 
-  // Clear filters for current tab
   const clearCurrentFilters = () => {
     if (activeTab === 'available') {
       setAvailableFilters({
-        locations: [],
-        serviceTypes: [],
-        urgencies: [],
-        dateRange: { start: null, end: null },
-        status: 'available'
+        locations: [], serviceTypes: [], urgencies: [],
+        dateRange: { start: null, end: null }, status: 'available'
       });
     } else {
       setCompletedFilters({
-        locations: [],
-        serviceTypes: [],
-        urgencies: [],
-        dateRange: { start: null, end: null },
-        status: 'completed'
+        locations: [], serviceTypes: [], urgencies: [],
+        dateRange: { start: null, end: null }, status: 'completed'
       });
     }
   };
 
-  // Count active filters (excluding status)
   const getActiveFilterCount = () => {
     let count = 0;
     if (currentFilters.locations.length > 0) count += currentFilters.locations.length;
@@ -95,37 +146,33 @@ const Home = () => {
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'High':
-        return '#FEE2E2';
-      case 'Medium':
-        return '#FFEDD5';
-      case 'Low':
-        return '#DCFCE7';
-      default:
-        return '#F3F4F6';
+      case 'High': return '#FEE2E2';
+      case 'Medium': return '#FFEDD5';
+      case 'Low': return '#DCFCE7';
+      default: return '#F3F4F6';
     }
   };
 
   const getUrgencyTextColor = (urgency: string) => {
     switch (urgency) {
-      case 'High':
-        return '#B91C1C';
-      case 'Medium':
-        return '#C2410C';
-      case 'Low':
-        return '#166534';
-      default:
-        return '#374151';
+      case 'High': return '#B91C1C';
+      case 'Medium': return '#C2410C';
+      case 'Low': return '#166534';
+      default: return '#374151';
     }
   };
 
-  // console.log('Query state:', { 
-  //   isLoading, 
-  //   error: error?.message, 
-  //   listingsCount: listings?.length,
-  //   activeTab,
-  //   currentFilters
-  // });
+  // --- NEW: client-side filtering by search text
+  const visibleListings = (listings ?? []).filter((l: any) => {
+    if (!searchText.trim()) return true;
+    const q = searchText.trim().toLowerCase();
+    return (
+      l.category?.toLowerCase().includes(q) ||
+      l.description?.toLowerCase().includes(q) ||
+      l.street_address?.toLowerCase().includes(q) ||
+      l.urgency?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <>
@@ -134,9 +181,23 @@ const Home = () => {
         <HeaderSection>
           <MenuContainer />
           <Bar>
-            <SearchBar>
+            {/* --- NEW: real search input */}
+            <SearchBarContainer>
               <Search />
-            </SearchBar>
+              <SearchInput
+                placeholder="Search listings…"
+                value={searchText}
+                onChangeText={setSearchText}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+              {searchText.length > 0 && (
+                <ClearSearch onPress={() => setSearchText('')}>
+                  <X size={16} color="#6B7280" />
+                </ClearSearch>
+              )}
+            </SearchBarContainer>
+
             <FilterButtonContainer>
               <Filter onPress={() => setFilterVisible(true)}>
                 <SlidersHorizontal />
@@ -148,15 +209,16 @@ const Home = () => {
               )}
             </FilterButtonContainer>
           </Bar>
+
           <TabBar>
-            <TabButton 
+            <TabButton
               isActive={activeTab === 'available'}
               onPress={() => setActiveTab('available')}
             >
               <LayoutList size={24} color={activeTab === 'available' ? '#000000' : '#9CA3AF'} />
               <TabText isActive={activeTab === 'available'}>Available</TabText>
             </TabButton>
-            <TabButton 
+            <TabButton
               isActive={activeTab === 'completed'}
               onPress={() => setActiveTab('completed')}
             >
@@ -164,11 +226,14 @@ const Home = () => {
               <TabText isActive={activeTab === 'completed'}>Completed</TabText>
             </TabButton>
           </TabBar>
+
+          <SavedNav onPress={() => router.push('/(manage-request)/savedRequest')}>
+            <SavedNavText>Go to Saved</SavedNavText>
+          </SavedNav>
         </HeaderSection>
 
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-          {/* Show active filters summary */}
-          {getActiveFilterCount() > 0 && (
+          {/* {getActiveFilterCount() > 0 && (
             <ActiveFiltersContainer>
               <ActiveFiltersText>
                 {getActiveFilterCount()} filter{getActiveFilterCount() > 1 ? 's' : ''} applied
@@ -177,9 +242,8 @@ const Home = () => {
                 <ClearFiltersText>Clear all</ClearFiltersText>
               </ClearFiltersButton>
             </ActiveFiltersContainer>
-          )}
+          )} */}
 
-          {/* Loading State */}
           {isLoading && (
             <LoadingContainer>
               <ActivityIndicator size="large" color="#2B61A6" />
@@ -187,107 +251,118 @@ const Home = () => {
             </LoadingContainer>
           )}
 
-          {/* Error State */}
           {error && (
             <ErrorText>Error loading listings. Please try again.</ErrorText>
           )}
 
-          {/* Map through listings - same for both tabs*/}
-          {!isLoading && listings && hasPermission(userRole, 'canViewAllListings') ? (listings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              onPress={() => router.navigate({
-                pathname: '/(specific-listing)/sampleListing',
-                params: {
-                  listingId: String(listing.id),
-                  category: listing.category,
-                  description: listing.description,
-                  address: listing.street_address,
-                  startTime: listing.start_time,
-                  duration: listing.duration,
-                  urgency: listing.urgency,
-                  status: listing.status
-                }
-              })}
-            >
-              <CardContent>
-                <CardHeader>
-                  <CategoryBadge>
-                    <CategoryBadgeText>{listing.category}</CategoryBadgeText>
-                  </CategoryBadge>
-                  <CardActions>
-                    <ActionButton>
-                      <Heart size={20} color="#6B7280" />
-                    </ActionButton>
-                    <ActionButton>
-                      <MoveRight size={20} color="#6B7280" />
-                    </ActionButton>
-                  </CardActions>
-                </CardHeader>
-                
-                <CardBody>
-                  <ListingTitle>{listing.category}</ListingTitle>
-                  <ListingSubtitle numberOfLines={3}>
-                    {listing.description}
-                  </ListingSubtitle>
-                </CardBody>
-                
-                <CardFooter>
-                  <LocationRow>
-                    <MapPin size={16} color="#6B7280" />
-                    <ListingLocation numberOfLines={1}>
-                      {listing.street_address}
-                    </ListingLocation>
-                  </LocationRow>
-                  
-                  {/* Show different badges based on tab */}
-                  <FooterRow>
-                    {listing.urgency && (
-                      <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
-                        <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
-                          {listing.urgency} Priority
-                        </UrgencyText>
-                      </UrgencyBadge>
-                    )}
-                    
-                    {/* Show completion badge for completed tab */}
-                    {activeTab === 'completed' && (
-                      <StatusBadge>
-                        <CheckCircle size={14} color="#16A34A" />
-                        <StatusText>Completed</StatusText>
-                      </StatusBadge>
-                    )}
-                  </FooterRow>
-                </CardFooter>
-              </CardContent>
-            </ListingCard>
-          ))) : 
-          <EmptyListingsContainer>
-            <SigninToViewListingsText>- Sign in to view listings -</SigninToViewListingsText>
-          </EmptyListingsContainer>
-          }
+          {!isLoading && visibleListings && hasPermission(userRole, 'canViewAllListings') ? (
+            visibleListings.map((listing: any) => (
+              <ListingCard
+                key={listing.id}
+                onPress={async () => {
+                  console.log('Listing card clicked'); // For debugging
+                  try {
+                    await incrementMonthClick();
+                    router.navigate({
+                      pathname: '/(specific-listing)/sampleListing',
+                      params: {
+                        listingId: String(listing.id),
+                        category: listing.category,
+                        description: listing.description,
+                        address: listing.street_address,
+                        startTime: listing.start_time,
+                        duration: listing.duration,
+                        urgency: listing.urgency,
+                        status: listing.status
+                      }
+                    });
+                  } catch (e) {
+                    console.error('Error on listing click:', e);
+                  }
+                }}
+              >
+                <CardContent>
+                  <CardHeader>
+                    <CategoryBadge>
+                      <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+                    </CategoryBadge>
 
-          {/* Empty State */}
-          {!isLoading && listings && listings.length === 0 && (
+                    <CardActions>
+                      <ActionButton onPress={() => handleToggleSave(listing.id)}> {/* Heart icon to save */}
+                        <Heart
+                          size={20}
+                          color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
+                          fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
+                        />
+                      </ActionButton>
+
+                      <ActionButton onPress={handleViewRequestClick}> {/* View Request Button */}
+                        <MoveRight size={20} color="#6B7280" />
+                        <Text>View Request</Text> {/* Optional: Add some text here for clarity */}
+                      </ActionButton>
+                    </CardActions>
+                  </CardHeader>
+
+                  <CardBody>
+                    <ListingTitle>{listing.category}</ListingTitle>
+                    <ListingSubtitle numberOfLines={3}>
+                      {listing.description}
+                    </ListingSubtitle>
+                  </CardBody>
+
+                  <CardFooter>
+                    <LocationRow>
+                      <MapPin size={16} color="#6B7280" />
+                      <ListingLocation numberOfLines={1}>
+                        {listing.street_address}
+                      </ListingLocation>
+                    </LocationRow>
+
+                    <FooterRow>
+                      {listing.urgency && (
+                        <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
+                          <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
+                            {listing.urgency} Priority
+                          </UrgencyText>
+                        </UrgencyBadge>
+                      )}
+                      {activeTab === 'completed' && (
+                        <StatusBadge>
+                          <CheckCircle size={14} color="#16A34A" />
+                          <StatusText>Completed</StatusText>
+                        </StatusBadge>
+                      )}
+                    </FooterRow>
+                  </CardFooter>
+                </CardContent>
+              </ListingCard>
+            ))
+          ) : (
+            <EmptyListingsContainer>
+              <SigninToViewListingsText>- Sign in to view listings -</SigninToViewListingsText>
+            </EmptyListingsContainer>
+          )}
+
+          {!isLoading && visibleListings && visibleListings.length === 0 && (
             <EmptyText>
-              {getActiveFilterCount() > 0 
-                ? `No ${activeTab} listings match your filters. Try adjusting them.`
+              {searchText
+                ? `No ${activeTab} listings match "${searchText}".`
                 : `No ${activeTab} listings yet.`}
             </EmptyText>
           )}
         </ScrollContainer>
 
         {hasPermission(userRole, 'canCreateListings') && (
-        <CreateListingContainer>
-          <SquarePen 
-            size={26} 
-            color={'#ffffff'}
-            onPress={() => router.navigate('(create-request)/(steps)/step1' as any)}
-          />
-        </CreateListingContainer>)}
+          <CreateListingContainer>
+            <SquarePen
+              size={26}
+              color={'#ffffff'}
+              onPress={() => router.navigate('(create-request)/(steps)/step1' as any)}
+            />
+          </CreateListingContainer>
+        )}
       </SafeAreaViewContainer>
 
-      {/* Filter Bottom Sheet - exclude status from filters passed to user */}
       <FilterBottomSheet
         visible={filterVisible}
         onClose={() => setFilterVisible(false)}
@@ -305,10 +380,12 @@ const Home = () => {
 
 export default Home;
 
+/* ---------------- Styles ---------------- */
+
 const ScrollContainer = styled.ScrollView`
-    margin-horizontal: 20px;
-    padding-top: 16px;
-`
+  margin-horizontal: 20px;
+  padding-top: 16px;
+`;
 
 const HeaderSection = styled.View`
   background-color: #ffffff;
@@ -335,14 +412,24 @@ const Bar = styled.View`
   margin-bottom: 20px;
 `;
 
-const SearchBar = styled.Pressable`
-  padding-horizontal: 20px;
-  padding-vertical: 12px;
+/* NEW: Search input UI */
+const SearchBarContainer = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-horizontal: 14px;
+  padding-vertical: 10px;
   background-color: #ffffff;
   border-radius: 30px;
-  overflow: hidden;
-  justify-content: flex-start;
   width: 80%;
+`;
+const SearchInput = styled.TextInput`
+  flex: 1;
+  font-size: 15px;
+  color: #111827;
+`;
+const ClearSearch = styled.Pressable`
+  padding: 4px;
 `;
 
 const Filter = styled.Pressable`
@@ -377,39 +464,13 @@ const FilterBadgeText = styled.Text`
   font-weight: 600;
 `;
 
-const ActiveFiltersContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #F3F4F6;
-  border-radius: 8px;
-  margin-bottom: 16px;
-`;
-
-const ActiveFiltersText = styled.Text`
-  font-size: 14px;
-  color: #374151;
-  font-weight: 500;
-`;
-
-const ClearFiltersButton = styled.TouchableOpacity`
-  padding: 4px 8px;
-`;
-
-const ClearFiltersText = styled.Text`
-  font-size: 14px;
-  color: #2B61A6;
-  font-weight: 600;
-`;
-
 const TabBar = styled.View`
   flex-direction: row;
   background-color: #FFFFFF;
   padding-horizontal: 8px;
   padding-vertical: 6px;
   border-radius: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   margin-horizontal: 20px;
   shadow-color: #000000;
   shadow-offset: 0px 1px;
@@ -430,9 +491,23 @@ const TabButton = styled.TouchableOpacity<{ isActive: boolean }>`
 
 const TabText = styled.Text<{ isActive: boolean }>`
   font-size: 12px;
-  font-weight: ${props => props.isActive ? '600' : '500'};
-  color: ${props => props.isActive ? '#000000' : '#9CA3AF'};
+  font-weight: ${props => (props.isActive ? '600' : '500')};
+  color: ${props => (props.isActive ? '#000000' : '#9CA3AF')};
   margin-top: 2px;
+`;
+
+/* Go to Saved button */
+const SavedNav = styled.TouchableOpacity`
+  align-self: flex-end;
+  margin-right: 20px;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background-color: #F3F4F6;
+`;
+const SavedNavText = styled.Text`
+  font-weight: 600;
+  color: #111827;
 `;
 
 const ListingCard = styled.TouchableOpacity`
@@ -479,6 +554,9 @@ const CardActions = styled.View`
 `;
 
 const ActionButton = styled.Pressable`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
   background-color: #F9FAFB;
   padding: 8px;
   border-radius: 20px;
@@ -612,3 +690,13 @@ const SigninToViewListingsText = styled.Text`
   font-weight: 500;
   text-align: center;
 `;
+
+const handleViewRequestClick = async () => {
+  console.log('View Request clicked');
+  try {
+    await incrementMonthClick(); // Ensure that the click count is updated in the database first
+    router.push('/(manage-request)/viewStats1'); // Then navigate to the next screen
+  } catch (e) {
+    console.error('Error recording click:', e); // Catch any errors during the increment or navigation
+  }
+};
