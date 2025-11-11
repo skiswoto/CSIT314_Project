@@ -24,12 +24,13 @@ const EditStep4 = () => {
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
   const ALLOWED_DOCUMENT_TYPES = ['application/pdf', ...ALLOWED_IMAGE_TYPES];
   
-  if (!listingData) return null;
   useEffect(() => {
     return () => {
       setUploadError(null);
     };
   }, []);
+    if (!listingData) return null;
+
 
   const validateFile = (file: { size?: number; mimeType?: string; type?: string }) => {
     const fileType = file.mimeType || file.type;
