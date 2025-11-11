@@ -43,7 +43,7 @@ const EditStep2 = () => {
   return (
     <EditRequestFormTemplate listingId={listingData.id} originalData={listingData}>
       <StepTitle>When do you need help?</StepTitle>
-      <StepSubTitle>Pick when you'd like the volunteer(s) to help and the expected duration</StepSubTitle>
+      <StepSubTitle>Pick when you&apos;td like the volunteer(s) to help and the expected duration</StepSubTitle>
 
       <Card onPress={() => setShowDatePickerModal(true)}>
         <CardTitle $hasValue={!!date}>{date ? date.toLocaleDateString() : 'Date'}</CardTitle>

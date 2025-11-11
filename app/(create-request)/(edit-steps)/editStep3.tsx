@@ -8,10 +8,10 @@ import EditRequestFormTemplate from "./EditRequestFormTemplate";
 const EditStep3 = () => {
   const params = useLocalSearchParams();
   const listingData = params.listingData ? JSON.parse(params.listingData as string) : null;
-  if (!listingData) return null;
-
+  
   const { streetAddress, unitLevel, buildingName, postCode, setStreetAddress, setUnitLevel, setBuildingName, setPostCode } = useCreateListingStore();
-
+  if (!listingData) return null;
+  
   return (
     <EditRequestFormTemplate listingId={listingData.id} originalData={listingData}>
       <StepTitle>Where should we send help?</StepTitle>

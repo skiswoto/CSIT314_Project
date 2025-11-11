@@ -13,18 +13,18 @@ import EditRequestFormTemplate from "./EditRequestFormTemplate";
 const EditStep4 = () => {
   const params = useLocalSearchParams();
   const listingData = params.listingData ? JSON.parse(params.listingData as string) : null;
-  if (!listingData) return null;
-
+  
   const { supportingDocuments, setSupportingDocuments } = useCreateListingStore();
   const { user } = userAuthStore();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<string | null>(null);
-
+  
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
   const ALLOWED_DOCUMENT_TYPES = ['application/pdf', ...ALLOWED_IMAGE_TYPES];
-
+  
+  if (!listingData) return null;
   useEffect(() => {
     return () => {
       setUploadError(null);
