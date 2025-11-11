@@ -111,7 +111,11 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
                 category: category || '',
                 urgency: urgency || '',
                 listing_date: date?.toISOString().split('T')[0] || '',
-                start_time: time?.toTimeString().split(' ')[0] || '',
+                start_time: time
+                  ? new Date(
+                      date?.toISOString().split('T')[0] + 'T' + time.toTimeString().split(' ')[0]
+                    ).toISOString()
+                  : null,
                 duration: durationInterval,
                 street_address: streetAddress || '',
                 unit_level: unitLevel || '',
