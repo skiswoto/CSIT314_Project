@@ -7,8 +7,9 @@ export interface ListingEmailData {
   address: string
   startTime: string
   duration: string
-  emailType: 'accepted' | 'completed'
+  emailType: 'accepted' | 'completed' | 'edited'
   recipientEmail?: string
+  changes?: Array<{ field: string; oldValue: string; newValue: string }>
 }
 
 export const sendListingStatusEmail = async (listingData: ListingEmailData) => {

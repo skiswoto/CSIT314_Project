@@ -1,159 +1,308 @@
 import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
-import { useCreateListingStore } from '@/global/createListingStore';
-import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
+import { sendListingStatusEmail } from '@/services/emailNotifications';
 import { useRouter } from 'expo-router';
-import { X } from 'lucide-react-native';
-import { useEffect } from 'react';
-import { Alert, StatusBar } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 
 type EditRequestFormTemplateProps = {
-  listingData: any; // Accept the entire listing data as a prop
+  listingData: any;
 };
 
 const EditRequestFormTemplate = ({ listingData }: EditRequestFormTemplateProps) => {
-  const { setFormFields, description, category, urgency, date, time, duration, streetAddress, unitLevel, buildingName, postCode, currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore();
-  const { user } = userAuthStore();
   const router = useRouter();
+  
+  // Local state for form fields
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [urgency, setUrgency] = useState('');
+  const [listingDate, setListingDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [duration, setDuration] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [unitLevel, setUnitLevel] = useState('');
+  const [buildingName, setBuildingName] = useState('');
+  const [postCode, setPostCode] = useState('');
+  
+  // Store original data for comparison
+  const [originalData, setOriginalData] = useState<any>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (listingData) {
-      // Pre-fill form with existing listing data
-      setFormFields({
-        description: listingData.description || '',
-        category: listingData.category || '',
-        urgency: listingData.urgency || '',
-        date: listingData.listing_date ? new Date(listingData.listing_date) : (listingData.date ? new Date(listingData.date) : null),
-        time: listingData.start_time ? new Date(listingData.start_time) : (listingData.time ? new Date(listingData.time) : null),
-        duration: listingData.duration || '',
-        streetAddress: listingData.street_address || '',
-        unitLevel: listingData.unit_level || '',
-        buildingName: listingData.building_name || '',
-        postCode: listingData.post_code || '',
+      // Store original data
+      setOriginalData(listingData);
+      
+      // Pre-fill form
+      setDescription(listingData.description || '');
+      setCategory(listingData.category || '');
+      setUrgency(listingData.urgency || '');
+      setListingDate(listingData.listing_date || '');
+      setStartTime(listingData.start_time || '');
+      setDuration(listingData.duration || '');
+      setStreetAddress(listingData.street_address || '');
+      setUnitLevel(listingData.unit_level || '');
+      setBuildingName(listingData.building_name || '');
+      setPostCode(listingData.post_code || '');
+    }
+  }, [listingData]);
+
+  // Track what changed
+  const getChanges = (original: any, updated: any) => {
+    const changes: Array<{ field: string; oldValue: string; newValue: string }> = [];
+    
+    if (original.description !== updated.description) {
+      changes.push({ 
+        field: 'Description', 
+        oldValue: original.description || 'N/A', 
+        newValue: updated.description || 'N/A' 
       });
     }
-  }, [listingData, setFormFields]);
-
-  const stepsArray = [
-    '/(create-request)/(steps)/step1',
-    '/(create-request)/(steps)/step2',
-    '/(create-request)/(steps)/step3',
-    '/(create-request)/(steps)/step4',
-  ] as const;
-
-  const isLastStep = currentStep >= stepsArray.length - 1;
-
-  const handleNextStep = async () => {
-    const lastIndex = stepsArray.length - 1;
-    if (currentStep >= lastIndex) {
-      try {
-        const durationInterval = duration
-          ? (() => {
-              const hours = duration.getHours();
-              const minutes = duration.getMinutes();
-              const totalMinutes = hours * 60 + minutes;
-              return totalMinutes > 0 ? `${totalMinutes} minutes` : null;
-            })()
-          : null;
-
-        // Prepare the listing data to be updated
-        const listingData = {
-          description: description || '',
-          category: category || '',
-          urgency: urgency || '',
-          listing_date: date?.toISOString().split('T')[0] || '',
-          start_time: time?.toISOString() || '',
-          duration: durationInterval,
-          street_address: streetAddress || '',
-          unit_level: unitLevel || '',
-          building_name: buildingName || '',
-          post_code: postCode || '',
-          created_by: user?.id,
-        };
-
-        const { error: updateError } = await supabase
-          .from('Listings')
-          .update(listingData)
-          .eq('id', listingData.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        Alert.alert('Success', 'Listing updated successfully!');
-        router.push('/(tabs)/home');
-        cancelProgress();
-      } catch (e: any) {
-        Alert.alert('Error', e?.message || 'Failed to update listing. Please try again.');
-      }
-      return;
+    if (original.category !== updated.category) {
+      changes.push({ 
+        field: 'Category', 
+        oldValue: original.category || 'N/A', 
+        newValue: updated.category || 'N/A' 
+      });
     }
-
-    const nextIndex = Math.min(currentStep + 1, lastIndex);
-    nextStep();
-    router.push(stepsArray[nextIndex]);
+    if (original.urgency !== updated.urgency) {
+      changes.push({ 
+        field: 'Urgency', 
+        oldValue: original.urgency || 'N/A', 
+        newValue: updated.urgency || 'N/A' 
+      });
+    }
+    if (original.street_address !== updated.street_address) {
+      changes.push({ 
+        field: 'Address', 
+        oldValue: original.street_address || 'N/A', 
+        newValue: updated.street_address || 'N/A' 
+      });
+    }
+    if (original.start_time !== updated.start_time) {
+      changes.push({ 
+        field: 'Start Time', 
+        oldValue: original.start_time || 'N/A', 
+        newValue: updated.start_time || 'N/A' 
+      });
+    }
+    if (original.duration !== updated.duration) {
+      changes.push({ 
+        field: 'Duration', 
+        oldValue: original.duration || 'N/A', 
+        newValue: updated.duration || 'N/A' 
+      });
+    }
+    
+    return changes;
   };
 
-  const handlePreviousStep = () => {
-    if (currentStep <= 0) return;
-    previousStep();
-    router.back();
+  const handleUpdate = async () => {
+    try {
+      setIsUpdating(true);
+
+      // Validate listing ID exists
+      if (!listingData?.id) {
+        Alert.alert('Error', 'Invalid listing ID');
+        return;
+      }
+
+      // Prepare the updated listing data
+      const updatedListingData = {
+        description: description || '',
+        category: category || '',
+        urgency: urgency || '',
+        listing_date: listingDate || '',
+        start_time: startTime || '',
+        duration: duration || '',
+        street_address: streetAddress || '',
+        unit_level: unitLevel || '',
+        building_name: buildingName || '',
+        post_code: postCode || '',
+      };
+
+      console.log('Updating listing ID:', listingData.id);
+      console.log('Update data:', updatedListingData);
+
+      // Update the listing in database
+      const { data: updateResult, error: updateError } = await supabase
+        .from('Listings')
+        .update(updatedListingData)
+        .eq('id', Number(listingData.id))
+        .select();
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Update successful:', updateResult);
+
+      // Track changes
+      const changes = getChanges(originalData, updatedListingData);
+
+      // Send email notification if there were changes
+      if (changes.length > 0) {
+        try {
+          await sendListingStatusEmail({
+            listingId: String(listingData.id),
+            category: updatedListingData.category,
+            description: updatedListingData.description,
+            address: updatedListingData.street_address,
+            startTime: updatedListingData.start_time,
+            duration: updatedListingData.duration || 'N/A',
+            emailType: 'edited',
+            recipientEmail: 'monasterypin@gmail.com',
+            changes: changes
+          });
+          
+          console.log('✅ Edit notification email sent');
+        } catch (emailError) {
+          console.error('❌ Failed to send edit notification email:', emailError);
+          // Don't fail the update if email fails
+        }
+      }
+
+      Alert.alert(
+        'Success', 
+        'Listing updated successfully!',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => router.back()
+          }
+        ]
+      );
+    } catch (e: any) {
+      console.error('Update error:', e);
+      Alert.alert('Error', e?.message || 'Failed to update listing. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleCancel = () => {
-    cancelProgress();
-    router.replace('/(tabs)/home');
+    router.back();
   };
 
   return (
     <>
       <StatusBar />
       <SafeAreaViewContainer>
-        <ScreenContainer>
-          <TopSection onPress={handleCancel}>
-            <X size={30} />
-          </TopSection>
-          <Content>
-            <FieldLabel>Description</FieldLabel>
-            <FieldInput value={description} onChangeText={(text) => setFormFields({ description: text })} placeholder="Describe the request" multiline />
+        <Container>
+          <Header>
+            <BackButton onPress={handleCancel}>
+              <ArrowLeft size={24} color="#111827" />
+            </BackButton>
+            <HeaderTitle>Edit Listing</HeaderTitle>
+            <Spacer />
+          </Header>
 
-            <FieldLabel>Category</FieldLabel>
-            <FieldInput value={category} onChangeText={(text) => setFormFields({ category: text })} placeholder="Category" />
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <FormSection>
+              <SectionTitle>Basic Information</SectionTitle>
+              
+              <FieldLabel>Description *</FieldLabel>
+              <FieldInput 
+                value={description} 
+                onChangeText={setDescription}
+                placeholder="Describe the request" 
+                multiline 
+                numberOfLines={4}
+              />
 
-            <FieldLabel>Urgency</FieldLabel>
-            <FieldInput value={urgency} onChangeText={(text) => setFormFields({ urgency: text })} placeholder="Urgency" />
+              <FieldLabel>Category *</FieldLabel>
+              <FieldInput 
+                value={category} 
+                onChangeText={setCategory}
+                placeholder="medical, transport, household, groceries, emotional" 
+              />
 
-            <FieldLabel>Start Date</FieldLabel>
-            <FieldInput value={date ? date.toISOString().split('T')[0] : ''} onChangeText={(text) => setFormFields({ date: new Date(text) })} placeholder="Start Date" />
+              <FieldLabel>Urgency *</FieldLabel>
+              <FieldInput 
+                value={urgency} 
+                onChangeText={setUrgency}
+                placeholder="High, Medium, Low" 
+              />
+            </FormSection>
 
-            <FieldLabel>Start Time</FieldLabel>
-            <FieldInput value={time ? time.toISOString() : ''} onChangeText={(text) => setFormFields({ time: new Date(text) })} placeholder="Start Time" />
+            <FormSection>
+              <SectionTitle>Schedule</SectionTitle>
+              
+              <FieldLabel>Start Date *</FieldLabel>
+              <FieldInput 
+                value={listingDate} 
+                onChangeText={setListingDate}
+                placeholder="YYYY-MM-DD" 
+              />
 
-            <FieldLabel>Duration</FieldLabel>
-            <FieldInput value={duration} onChangeText={(text) => setFormFields({ duration: text })} placeholder="Duration" />
+              <FieldLabel>Start Time *</FieldLabel>
+              <FieldInput 
+                value={startTime} 
+                onChangeText={setStartTime}
+                placeholder="HH:MM:SS or HH:MM" 
+              />
 
-            <FieldLabel>Street Address</FieldLabel>
-            <FieldInput value={streetAddress} onChangeText={(text) => setFormFields({ streetAddress: text })} placeholder="Street Address" />
+              <FieldLabel>Duration</FieldLabel>
+              <FieldInput 
+                value={duration}
+                onChangeText={setDuration}
+                placeholder="e.g., 60 minutes or 2 hours" 
+              />
+            </FormSection>
 
-            <FieldLabel>Unit Level</FieldLabel>
-            <FieldInput value={unitLevel} onChangeText={(text) => setFormFields({ unitLevel: text })} placeholder="Unit Level" />
+            <FormSection>
+              <SectionTitle>Location</SectionTitle>
+              
+              <FieldLabel>Street Address *</FieldLabel>
+              <FieldInput 
+                value={streetAddress} 
+                onChangeText={setStreetAddress}
+                placeholder="Street Address" 
+              />
 
-            <FieldLabel>Building Name</FieldLabel>
-            <FieldInput value={buildingName} onChangeText={(text) => setFormFields({ buildingName: text })} placeholder="Building Name" />
+              <FieldLabel>Unit Level</FieldLabel>
+              <FieldInput 
+                value={unitLevel} 
+                onChangeText={setUnitLevel}
+                placeholder="Unit Level (optional)" 
+              />
 
-            <FieldLabel>Post Code</FieldLabel>
-            <FieldInput value={postCode} onChangeText={(text) => setFormFields({ postCode: text })} placeholder="Post Code" />
-          </Content>
-          <BottomSection>
-            <Previous onPress={handlePreviousStep}>
-              <PreviousText>back</PreviousText>
-            </Previous>
-            <Next onPress={handleNextStep}>
-              <NextText>{isLastStep ? 'Submit' : 'Next'}</NextText>
-            </Next>
-          </BottomSection>
-        </ScreenContainer>
+              <FieldLabel>Building Name</FieldLabel>
+              <FieldInput 
+                value={buildingName} 
+                onChangeText={setBuildingName}
+                placeholder="Building Name (optional)" 
+              />
+
+              <FieldLabel>Post Code *</FieldLabel>
+              <FieldInput 
+                value={postCode} 
+                onChangeText={setPostCode}
+                placeholder="Post Code" 
+                keyboardType="numeric"
+              />
+            </FormSection>
+          </ScrollView>
+
+          <ButtonContainer>
+            <CancelButton onPress={handleCancel}>
+              <CancelButtonText>Cancel</CancelButtonText>
+            </CancelButton>
+            
+            <UpdateButton onPress={handleUpdate} disabled={isUpdating}>
+              <UpdateButtonText>
+                {isUpdating ? 'Updating...' : 'Update Listing'}
+              </UpdateButtonText>
+            </UpdateButton>
+          </ButtonContainer>
+        </Container>
       </SafeAreaViewContainer>
     </>
   );
@@ -161,64 +310,103 @@ const EditRequestFormTemplate = ({ listingData }: EditRequestFormTemplateProps) 
 
 export default EditRequestFormTemplate;
 
-const TopSection = styled.Pressable`
-  justify-content: flex-start;
-  width: 20%;
-`;
-
-const BottomSection = styled.View`
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-`;
-
-const ScreenContainer = styled.View`
+const Container = styled.View`
   flex: 1;
-  padding-top: 80px;
-  padding-bottom: 50px;
-  padding-horizontal: 26px;
   background-color: #FCFCFC;
 `;
 
-const Content = styled.ScrollView`
-  padding-vertical: 40px;
+const Header = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-bottom-width: 1px;
+  border-bottom-color: #E5E7EB;
 `;
 
-const Previous = styled.Pressable`
-  padding-right: 20px;
+const BackButton = styled.TouchableOpacity`
+  padding: 8px;
 `;
 
-const Next = styled.Pressable`
-  background-color: #000000;
-  padding-horizontal: 18px;
-  padding-vertical: 10px;
-  border-radius: 10px;
-  overflow: hidden;
-`;
-
-const PreviousText = styled.Text`
-  font-weight: 400;
+const HeaderTitle = styled.Text`
   font-size: 18px;
-  text-decoration-line: underline;
+  font-weight: 600;
+  color: #111827;
 `;
 
-const NextText = styled(PreviousText)`
-  text-decoration-line: none;
-  color: #ffffff;
+const Spacer = styled.View`
+  width: 40px;
+`;
+
+const FormSection = styled.View`
+  background-color: #FFFFFF;
+  padding: 20px;
+  margin: 16px 20px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: #E5E7EB;
+`;
+
+const SectionTitle = styled.Text`
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
 `;
 
 const FieldLabel = styled.Text`
-  font-size: 16px;
-  font-weight: bold;
-  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  margin-top: 8px;
 `;
 
 const FieldInput = styled.TextInput`
   border-width: 1px;
-  border-color: #E5E7EB;
-  border-radius: 10px;
-  padding: 10px;
-  min-height: 70px;
+  border-color: #D1D5DB;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 48px;
   color: #111827;
-  margin-bottom: 16px;
+  background-color: #F9FAFB;
+  font-size: 14px;
+`;
+
+const ButtonContainer = styled.View`
+  flex-direction: row;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border-top-width: 1px;
+  border-top-color: #E5E7EB;
+  gap: 12px;
+`;
+
+const CancelButton = styled.TouchableOpacity`
+  flex: 1;
+  background-color: #F3F4F6;
+  padding: 16px;
+  border-radius: 12px;
+  align-items: center;
+`;
+
+const CancelButtonText = styled.Text`
+  color: #374151;
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+const UpdateButton = styled.TouchableOpacity<{ disabled?: boolean }>`
+  flex: 2;
+  background-color: ${props => props.disabled ? '#9CA3AF' : '#111827'};
+  padding: 16px;
+  border-radius: 12px;
+  align-items: center;
+`;
+
+const UpdateButtonText = styled.Text`
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 600;
 `;
