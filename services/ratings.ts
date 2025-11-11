@@ -72,6 +72,7 @@ export const submitRating = async (ratingData: ServiceRating) => {
   }
 };
 
+// Get the rating for a listing (only one rating per listing)
 export const getRatingByListingId = async (listingId: number, raterId?: string) => {
   try {
     let query = supabase
