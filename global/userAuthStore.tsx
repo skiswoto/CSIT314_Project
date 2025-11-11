@@ -25,6 +25,11 @@ supabase.auth.getUser().then(({ data: { user } }) => {
 });
 
 // Listen for auth changes (login/logout automatically update store)
-supabase.auth.onAuthStateChange((_event, session) => {
+const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
     userAuthStore.getState().setUser(session?.user ?? null);
+
 });
+
+export const unsubscribeAuth = () => {
+    authListener?.subscription.unsubscribe()
+}
