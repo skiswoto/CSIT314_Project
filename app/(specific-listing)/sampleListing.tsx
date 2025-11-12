@@ -379,8 +379,8 @@ Status: ${status}`.trim();
                         {description || 'No description provided.'}
                     </ListingDescription>
                     
-                    {/* Show View Documents button only to CSR/Platform Manager */}
-                    {(userRole === 'csr_rep' || userRole === 'platform_manager') && (
+                    {/* Show View Documents button only to CSR, PIN (own request) */}
+                    {((userRole === 'csr_rep') || (userRole === 'pin' && documentCount > 0)) && (
                         <DocumentButton onPress={() => setShowDocuments(true)}>
                             <FileText size={20} color="#4F46E5" />
                             <DocumentButtonText>
@@ -530,7 +530,7 @@ Status: ${status}`.trim();
                         </RatingDisplaySection>
                     )}
                     
-                    {/* Apply Button - Only show to CSR/Platform Manager users, not to PIN users */}
+                    {/* Apply Button - Only show to CSR, not to PIN users */}
                     {!isCompleted && hasPermission(userRole, 'canApplyListing') && (
                         <ApplyButton 
                             disabled={isButtonDisabled || isAccepting}
