@@ -199,7 +199,7 @@ const SampleListing = () => {
         if (!time) return 'Not specified';
         const timeStr = Array.isArray(time) ? time[0] : time;
         
-        // ✅ Handle timezone properly
+        // Handle timezone properly
         if (timeStr.includes('T')) {
             // It's an ISO datetime string
             let timestampString = timeStr;
@@ -215,7 +215,7 @@ const SampleListing = () => {
             
             const date = new Date(timestampString);
             
-            // ✅ getHours() and getMinutes() automatically return LOCAL time
+            // getHours() and getMinutes() automatically return LOCAL time
             const hours = date.getHours(); // This is already in local timezone (SGT)
             const minutes = date.getMinutes().toString().padStart(2, '0');
             
@@ -243,7 +243,7 @@ const SampleListing = () => {
                 0
             ));
             
-            // ✅ Now convert to local time
+            // Convert to local time
             const localHours = utcDate.getHours(); // Automatically in local timezone
             const localMinutes = utcDate.getMinutes().toString().padStart(2, '0');
             
