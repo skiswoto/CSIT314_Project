@@ -3,7 +3,7 @@ import { useCreateListingStore } from "@/global/createListingStore";
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams } from 'expo-router';
 import { CalendarFold, Clock2, Clock5, Hourglass } from 'lucide-react-native';
-import { useState } from "react";
+import { useEffect, useState } from "react"; // Added useEffect
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 import EditRequestFormTemplate from './EditRequestFormTemplate';
 
@@ -16,11 +16,58 @@ const EditStep2 = () => {
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showDurationModal, setShowDurationModal] = useState(false);
 
+  // Initialize store with existing listing data
+  useEffect(() => {
+    if (listingData) {
+      // Parse existing date from listing data
+      if (listingData.date) {
+        setDate(new Date(listingData.date));
+      }
+      
+      // Parse existing time from listing data
+      if (listingData.start_time) {
+        setTime(new Date(listingData.start_time));
+      }
+      
+      // Parse existing duration from listing data
+      if (listingData.duration) {
+        // Convert duration string (e.g., "02:30:00") to Date object
+        const [hours, minutes] = listingData.duration.split(':').map(Number);
+        const durationDate = new Date();
+        durationDate.setHours(hours, minutes, 0, 0);
+        setDuration(durationDate);
+      }
+    }
+  }, [listingData, setDate, setTime, setDuration]);
+
   if (!listingData) return null;
 
   const CURRENT_DATE = new Date();
   const MINIMUM_DATE = new Date(CURRENT_DATE);
   MINIMUM_DATE.setDate(MINIMUM_DATE.getDate() + 1);
+
+  // Create default time that matches the listing data
+  const getDefaultTime = () => {
+    if (time) return time;
+    if (listingData.start_time) return new Date(listingData.start_time);
+    const defaultTime = new Date();
+    defaultTime.setHours(9, 0, 0, 0);
+    return defaultTime;
+  };
+
+  // Create default duration that matches the listing data
+  const getDefaultDuration = () => {
+    if (duration) return duration;
+    if (listingData.duration) {
+      const [hours, minutes] = listingData.duration.split(':').map(Number);
+      const durationDate = new Date();
+      durationDate.setHours(hours, minutes, 0, 0);
+      return durationDate;
+    }
+    const defaultDuration = new Date();
+    defaultDuration.setHours(1, 0, 0, 0);
+    return defaultDuration;
+  };
 
   const formatDuration = (date: Date): string => {
     if (!date) return 'Duration';
@@ -88,7 +135,7 @@ const EditStep2 = () => {
           <View style={styles.modalContent}>
             <RNDateTimePicker
               mode="time"
-              value={time || MINIMUM_DATE}
+              value={time || getDefaultTime()} // Use the actual listing time
               onChange={(_, selectedTime) => selectedTime && setTime(selectedTime)}
               display="spinner"
             />
@@ -102,7 +149,7 @@ const EditStep2 = () => {
           <View style={styles.modalContent}>
             <RNDateTimePicker
               mode="countdown"
-              value={duration || MINIMUM_DATE}
+              value={duration || getDefaultDuration()} // Use the actual listing duration
               onChange={(_, selectedDuration) => selectedDuration && setDuration(selectedDuration)}
               display="spinner"
               minuteInterval={30}
