@@ -23,14 +23,15 @@ const DocumentViewer = ({ listingId, visible, onClose }: DocumentViewerProps) =>
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [openingDoc, setOpeningDoc] = useState<string | null>(null);
+  const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
     if (visible && listingId) {
-      loadDocuments();
+      checkPermissionAndLoadDocuments();
     }
   }, [visible, listingId]);
 
-  const loadDocuments = async () => {
+  const checkPermissionAndLoadDocuments = async () => {
     try {
       setLoading(true);
       
@@ -39,6 +40,7 @@ const DocumentViewer = ({ listingId, visible, onClose }: DocumentViewerProps) =>
       if (userError || !user) {
         console.error('Error getting user:', userError);
         Alert.alert('Error', 'Unable to verify user');
+        onClose();
         return;
       }
 
@@ -51,25 +53,50 @@ const DocumentViewer = ({ listingId, visible, onClose }: DocumentViewerProps) =>
       if (profileError) {
         console.error('Error fetching profile:', profileError);
         Alert.alert('Error', 'Unable to verify user role');
+        onClose();
         return;
       }
 
       const userRole = profile?.role?.toLowerCase();
 
+      // Check if user has permission to view documents
+      if (userRole === 'csr_rep') {
+        setHasPermission(true);
+        await loadDocuments(userRole, user.id);
+      } else if (userRole === 'pin') {
+        setHasPermission(true);
+        await loadDocuments(userRole, user.id);
+      } else {
+        // Platform manager or unknown role - no permission
+        setHasPermission(false);
+        Alert.alert(
+          'Access Denied', 
+          'You do not have permission to view supporting documents.'
+        );
+        onClose();
+      }
+      
+    } catch (error) {
+      console.error('Exception in checkPermissionAndLoadDocuments:', error);
+      Alert.alert('Error', 'Failed to verify permissions');
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadDocuments = async (userRole: string, userId: string) => {
+    try {
       let query = supabase
         .from('supporting_documents')
         .select('*')
         .eq('listing_id', listingId);
 
       if (userRole === 'pin') {
-        query = query.eq('uploaded_by', user.id);
-      } else if (userRole === 'csr_rep' || userRole === 'platform_manager') {
-        // No additional filter - show all documents for this listing
-      } else {
-        // Unknown role - restrict to own documents
-        console.warn('Unknown role detected:', userRole);
-        query = query.eq('uploaded_by', user.id);
+        // PIN can only see their own documents
+        query = query.eq('uploaded_by', userId);
       }
+      // CSR_REP can see all documents (no additional filter)
 
       const { data, error } = await query.order('uploaded_at', { ascending: false });
       
@@ -83,8 +110,6 @@ const DocumentViewer = ({ listingId, visible, onClose }: DocumentViewerProps) =>
     } catch (error) {
       console.error('Exception in loadDocuments:', error);
       Alert.alert('Error', 'Failed to load documents');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -135,6 +160,10 @@ const DocumentViewer = ({ listingId, visible, onClose }: DocumentViewerProps) =>
     if (['jpg', 'jpeg', 'png'].includes(ext || '')) return 'IMG';
     return 'DOC';
   };
+
+  if (!hasPermission) {
+    return null;
+  }
 
   return (
     <Modal
@@ -222,6 +251,7 @@ const DocumentViewer = ({ listingId, visible, onClose }: DocumentViewerProps) =>
 
 export default DocumentViewer;
 
+// Styled Components
 const ModalOverlay = styled.View`
   flex: 1;
   background-color: rgba(0, 0, 0, 0.5);
