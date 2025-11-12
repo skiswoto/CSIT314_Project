@@ -125,7 +125,7 @@ const MyListings = () => {
         category: listing.category,
         description: listing.description,
         address: listing.street_address,
-        startTime: listing.time,
+        startTime: listing.start_time,
         duration: listing.duration,
         urgency: listing.urgency,
         status: listing.status
