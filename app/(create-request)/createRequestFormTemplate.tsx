@@ -2,6 +2,7 @@ import { SafeAreaViewContainer } from '@/constants/GlobalStyles';
 import { useCreateListingStore } from "@/global/createListingStore";
 import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { Alert, StatusBar } from 'react-native';
@@ -29,6 +30,7 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore()
     const { user } = userAuthStore();
     const router = useRouter()
+    const queryClient = useQueryClient();
     
     const stepsArray = ([
         '/(create-request)/(steps)/step1', 
@@ -53,13 +55,34 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                         })()
                     : null;
                 
+                // Combine date and time in local timezone, then convert to UTC
+                let combinedStartTime = null;
+                if (date && time) {
+                    // Create a new date using the selected date and time
+                    const year = date.getFullYear();
+                    const month = date.getMonth();
+                    const day = date.getDate();
+                    const hours = time.getHours();
+                    const minutes = time.getMinutes();
+                    const seconds = time.getSeconds();
+                    
+                    // Create in local timezone, then convert to ISO (UTC)
+                    const localDateTime = new Date(year, month, day, hours, minutes, seconds);
+                    combinedStartTime = localDateTime.toISOString();
+                    
+                    console.log('🕐 Local date:', date.toLocaleDateString());
+                    console.log('🕐 Local time:', time.toLocaleTimeString());
+                    console.log('🕐 Combined local datetime:', localDateTime.toLocaleString());
+                    console.log('🕐 UTC timestamp to save:', combinedStartTime);
+                }
+                
                 // Prepare listing data
                 const listingData = {
                     description: description || '',
                     category: category || '',
                     urgency: urgency || '',
                     listing_date: date?.toISOString().split('T')[0] || '',
-                    start_time: time?.toISOString() || '',
+                    start_time: combinedStartTime,
                     duration: durationInterval,
                     street_address: streetAddress || '',
                     unit_level: unitLevel || '',
@@ -68,6 +91,8 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                     created_by: user?.id,
                     status: 'available'
                 };
+                
+                console.log('Creating listing with data:', listingData);
                 
                 // Create the listing
                 const { data: listing, error: listingError } = await supabase
@@ -97,6 +122,12 @@ const CreateRequestFormTemplate = ({ children }: CreateListingFormTemplateProps)
                         }
                     }
                 }
+                
+                // Invalidate cache to refresh home tab
+                console.log('Invalidating listing queries...');
+                await queryClient.invalidateQueries({ 
+                    queryKey: ['listings']
+                });
                 
                 Alert.alert('Success', 'Listing created successfully!');
                 router.push('/(tabs)/home');
