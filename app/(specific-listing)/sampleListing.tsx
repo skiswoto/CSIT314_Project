@@ -195,6 +195,24 @@ const SampleListing = () => {
         }
     };
 
+    // Add this function after the getUrgencyTextColor function
+    const formatDate = (dateTimeString: string | string[] | undefined) => {
+    if (!dateTimeString) return 'Not specified';
+    const dateTimeStr = Array.isArray(dateTimeString) ? dateTimeString[0] : dateTimeString;
+    
+    try {
+        const date = new Date(dateTimeStr);
+        return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+        });
+    } catch (error) {
+        return 'Invalid date';
+    }
+    };
+
     const formatTime = (time: string | string[] | undefined) => {
         if (!time) return 'Not specified';
         const timeStr = Array.isArray(time) ? time[0] : time;
@@ -454,10 +472,16 @@ Status: ${status}`.trim();
                             )}
                             
                             {startTime && (
+                            <>
                                 <DetailRow>
-                                    <Clock size={18} color="#6B7280" />
-                                    <DetailText>Starts at {formatTime(startTime)}</DetailText>
+                                <Calendar size={18} color="#6B7280" />
+                                <DetailText>{formatDate(startTime)}</DetailText>
                                 </DetailRow>
+                                <DetailRow>
+                                <Clock size={18} color="#6B7280" />
+                                <DetailText>Starts at {formatTime(startTime)}</DetailText>
+                                </DetailRow>
+                            </>
                             )}
                             
                             {duration && (
