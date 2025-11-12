@@ -119,7 +119,7 @@ const EditStep4 = () => {
             });
 
             if (documentUrl && user?.id) {
-              const saved = await saveDocumentRecord(documentUrl, user.id);
+              const saved = await saveDocumentRecord(documentUrl, user.id, listingData.id);
 
               if (saved) {
                 return {

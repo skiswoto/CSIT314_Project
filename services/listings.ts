@@ -241,33 +241,30 @@ export const uploadDocument = async (
 };
 
 // Save document record to database and return the ID
-export const saveDocumentRecord = async (
+export async function saveDocumentRecord(
   documentUrl: string,
   userId: string,
   listingId?: number
-): Promise<string | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('supporting_documents')
-      .insert({
-        listing_id: listingId || null,
+) {
+  const { data, error } = await supabase
+    .from('supporting_documents')
+    .insert([
+      {
         document_url: documentUrl,
         uploaded_by: userId,
-      })
-      .select('id')
-      .single();
+        listing_id: listingId ?? null, // <-- include link if provided
+      },
+    ])
+    .select()
+    .single();
 
-    if (error) {
-      console.error('Database insert error:', error);
-      return null;
-    }
-
-    return data?.id || null;
-  } catch (error) {
-    console.error('Save document record error:', error);
+  if (error) {
+    console.error('Error saving document record:', error);
     return null;
   }
-};
+  return data;
+}
+
 
 // Get signed URL for viewing document
 export const getDocumentSignedUrl = async (
