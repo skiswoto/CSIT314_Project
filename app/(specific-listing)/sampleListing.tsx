@@ -217,25 +217,61 @@ const SampleListing = () => {
         if (!time) return 'Not specified';
         const timeStr = Array.isArray(time) ? time[0] : time;
         
-        let hours: string;
-        let minutes: string;
-        
+        // Handle timezone properly
         if (timeStr.includes('T')) {
             // It's an ISO datetime string
-            const date = new Date(timeStr);
-            hours = date.getHours().toString();
-            minutes = date.getMinutes().toString().padStart(2, '0');
+            let timestampString = timeStr;
+            
+            // Clean up and ensure it's treated as UTC
+            timestampString = timestampString.replace(' ', 'T'); // Handle space
+            timestampString = timestampString.replace(/([+-]\d{2}):?(\d{2})?$/, ''); // Remove timezone offset
+            
+            // Add Z if not present (tells JavaScript it's UTC)
+            if (!timestampString.endsWith('Z')) {
+                timestampString = timestampString.split('.')[0] + 'Z'; // Remove microseconds, add Z
+            }
+            
+            const date = new Date(timestampString);
+            
+            // getHours() and getMinutes() automatically return LOCAL time
+            const hours = date.getHours(); // This is already in local timezone (SGT)
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+            
+            console.log('🕐 Formatting time:', timeStr, '→', `${displayHour}:${minutes} ${ampm}`);
+            
+            return `${displayHour}:${minutes} ${ampm}`;
         } else {
-            // It's a simple time string (e.g., "13:30" or "13:30:00")
+            // It's a simple time string like "10:30:00"
+            // ⚠️ Treat this as UTC and convert to local
             const timeParts = timeStr.split(':');
-            hours = timeParts[0];
-            minutes = timeParts[1];
+            const utcHours = parseInt(timeParts[0], 10);
+            const utcMinutes = parseInt(timeParts[1], 10);
+            
+            // Create a UTC date for today with this time
+            const now = new Date();
+            const utcDate = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+                utcHours,
+                utcMinutes,
+                0
+            ));
+            
+            // Convert to local time
+            const localHours = utcDate.getHours(); // Automatically in local timezone
+            const localMinutes = utcDate.getMinutes().toString().padStart(2, '0');
+            
+            const ampm = localHours >= 12 ? 'PM' : 'AM';
+            const displayHour = localHours === 0 ? 12 : localHours > 12 ? localHours - 12 : localHours;
+            
+            console.log('🕐 Formatting simple time:', timeStr, '(UTC) →', `${displayHour}:${localMinutes} ${ampm}`, '(Local)');
+            
+            return `${displayHour}:${localMinutes} ${ampm}`;
         }
-        
-        const hour = parseInt(hours, 10);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-        return `${displayHour}:${minutes} ${ampm}`;
     };
     
     const handleExportData = async () => {

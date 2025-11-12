@@ -3,6 +3,7 @@ import { useCreateListingStore } from "@/global/createListingStore";
 import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
 import { sendListingStatusEmail } from '@/services/emailNotifications';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { Alert, StatusBar } from 'react-native';
@@ -32,6 +33,7 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore();
     const { user } = userAuthStore();
     const router = useRouter();
+    const queryClient = useQueryClient();
     
     const stepsArray = ([
         '/(create-request)/(edit-steps)/editStep1', 
@@ -106,16 +108,35 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
                   })()
                 : null;
             
+            // Combine date and time in local timezone, then convert to UTC
+            let combinedStartTime = null;
+            if (date && time) {
+                // Extract date components
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const day = date.getDate();
+                
+                // Extract time components (these are already in local timezone)
+                const hours = time.getHours();
+                const minutes = time.getMinutes();
+                const seconds = time.getSeconds();
+                
+                // Create in local timezone, then convert to ISO (UTC)
+                const localDateTime = new Date(year, month, day, hours, minutes, seconds);
+                combinedStartTime = localDateTime.toISOString();
+                
+                console.log('🕐 Local date:', date.toLocaleDateString());
+                console.log('🕐 Local time:', time.toLocaleTimeString());
+                console.log('🕐 Combined local datetime:', localDateTime.toLocaleString());
+                console.log('🕐 UTC timestamp to save:', combinedStartTime);
+            }
+            
             const updatedListingData = {
                 description: description || '',
                 category: category || '',
                 urgency: urgency || '',
                 listing_date: date?.toISOString().split('T')[0] || '',
-                start_time: time
-                  ? new Date(
-                      date?.toISOString().split('T')[0] + 'T' + time.toTimeString().split(' ')[0]
-                    ).toISOString()
-                  : null,
+                start_time: combinedStartTime,
                 duration: durationInterval,
                 street_address: streetAddress || '',
                 unit_level: unitLevel || '',
@@ -133,6 +154,12 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
                 .single();
         
             if (updateError) throw updateError;
+            
+            // Invalidate all listing queries
+            console.log('Invalidating listing queries...');
+            await queryClient.invalidateQueries({ 
+                queryKey: ['listings']
+            });
             
             const changes = getChanges(originalData, updatedListingData);
 
@@ -160,7 +187,7 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
         return;
     }
 
-    // ✅ keep listingData when going to next step
+    // keep listingData when going to next step
     const nextIndex = Math.min(currentStep + 1, lastIndex);
         nextStep();
         router.push({
