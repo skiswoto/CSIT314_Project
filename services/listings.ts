@@ -42,6 +42,8 @@ export interface UploadedDocument {
   type: string;
   size?: number;
   url?: string;
+  document_url?:string;
+  uploaded_at?:string;
 }
 
 export interface SupportingDocument {
