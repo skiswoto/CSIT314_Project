@@ -3,6 +3,7 @@ import { useCreateListingStore } from "@/global/createListingStore";
 import { userAuthStore } from '@/global/userAuthStore';
 import { supabase } from '@/libs/supabase';
 import { sendListingStatusEmail } from '@/services/emailNotifications';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { Alert, StatusBar } from 'react-native';
@@ -32,6 +33,7 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
     const { currentStep, nextStep, previousStep, cancelProgress } = useCreateListingStore();
     const { user } = userAuthStore();
     const router = useRouter();
+    const queryClient = useQueryClient();
     
     const stepsArray = ([
         '/(create-request)/(edit-steps)/editStep1', 
@@ -134,6 +136,12 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
         
             if (updateError) throw updateError;
             
+            // This will refresh both home tab and myListings tab
+            console.log('Invalidating listing queries...');
+            await queryClient.invalidateQueries({ 
+                queryKey: ['listings']  // Matches ['listings', activeTab, currentFilters] pattern
+            });
+            
             const changes = getChanges(originalData, updatedListingData);
 
             if (changes.length > 0) {
@@ -160,7 +168,7 @@ const EditRequestFormTemplate = ({ children, listingId, originalData }: EditRequ
         return;
     }
 
-    // ✅ keep listingData when going to next step
+    // keep listingData when going to next step
     const nextIndex = Math.min(currentStep + 1, lastIndex);
         nextStep();
         router.push({
