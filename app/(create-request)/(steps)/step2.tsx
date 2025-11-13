@@ -18,6 +18,10 @@ const Step2 = () => {
     const MINIMUM_DATE = new Date(CURRENT_DATE)
     MINIMUM_DATE.setDate(MINIMUM_DATE.getDate() + 1)
 
+    // Create a default time that's actually 9:00 AM
+    const DEFAULT_TIME = new Date();
+    DEFAULT_TIME.setHours(9, 0, 0, 0); // Set to 9:00 AM
+
     const formatDuration = (date: Date | null): string => {
         if (!date) return 'Duration';
         
@@ -105,7 +109,7 @@ const Step2 = () => {
                     <View style={styles.modalContent}>
                         <RNDateTimePicker 
                             mode='time'
-                            value={time || MINIMUM_DATE}
+                            value={time || DEFAULT_TIME} // Changed from MINIMUM_DATE to DEFAULT_TIME
                             onChange={(_, selectedTime) => {
                                 if (selectedTime) setTime(selectedTime)
                             }}
@@ -129,7 +133,7 @@ const Step2 = () => {
                     <View style={styles.modalContent}>
                         <RNDateTimePicker 
                             mode='countdown'
-                            value={duration || MINIMUM_DATE}
+                            value={duration || DEFAULT_TIME} // Changed from MINIMUM_DATE to DEFAULT_TIME
                             onChange={(_, selectedDuration) => {
                                 if (selectedDuration) setDuration(selectedDuration)
                             }}
