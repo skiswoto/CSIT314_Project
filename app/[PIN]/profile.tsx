@@ -1,11 +1,11 @@
 import { Text, View } from 'react-native'
 
-const TestModal = () => {
+const UserProfile = () => {
     return (
         <View>
-            <Text>testModal</Text>
+            <Text>profile</Text>
         </View>
     )
 }
 
-export default TestModal
+export default UserProfile
