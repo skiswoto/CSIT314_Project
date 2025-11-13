@@ -1,58 +1,17 @@
 import { userAuthStore } from '@/global/userAuthStore';
-import { supabase } from '@/libs/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { CheckCircle, Heart, LayoutList, MapPin, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
+import { CheckCircle, LayoutList, Search, SlidersHorizontal, SquarePen, X } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, StatusBar } from 'react-native';
 import { styled } from 'styled-components/native';
 import { hasPermission } from '../../config/permissions';
 import { SafeAreaViewContainer } from '../../constants/GlobalStyles';
+import { incrementMonthClick } from '../../services/clickTracker'; // ✅ NEW IMPORT
 import FilterBottomSheet from '../../services/filter';
 import { getAllListings, ListingFilters } from '../../services/listings';
 import { fetchMySavedIds, toggleSave } from '../../services/savedListings';
-
-
-export const incrementMonthClick = async () => {
-  try {
-    const currentMonth = new Date().toLocaleString('default', { month: 'short' }); // e.g., 'Nov' for November
-    const { data: row, error: fetchError } = await supabase
-      .from('pindashboard')
-      .select('clicks')
-      .eq('month', currentMonth)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') { // 'PGRST116' means no row found
-      throw fetchError;
-    }
-
-    let newClicks = 1;
-    if (row) {
-      newClicks = row.clicks + 1;
-      const { error } = await supabase
-        .from('pindashboard')
-        .update({ clicks: newClicks })
-        .eq('month', currentMonth);
-
-      if (error) {
-        throw error;
-      }
-    } else {
-      const { error } = await supabase
-        .from('pindashboard')
-        .insert({ month: currentMonth, clicks: newClicks });
-
-      if (error) {
-        throw error;
-      }
-    }
-
-    console.log('Click count updated or inserted');
-  } catch (error) {
-    console.error('Error updating click count:', error);
-  }
-};
 
 
 const Home = () => {
@@ -60,12 +19,11 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
   const [filterVisible, setFilterVisible] = useState(false);
 
-  const user = userAuthStore((s) => s.user);
+  const user = userAuthStore((s) => s.user);     // Logged-in Supabase user
   const userRole = user?.user_metadata.role;
 
   // --- NEW: search text state
   const [searchText, setSearchText] = useState('');
-
 
   // Saved IDs for heart fill state
   const [savedIds, setSavedIds] = useState<number[]>([]);
@@ -91,7 +49,7 @@ const Home = () => {
     }
   };
 
-  // Separate filter states for each tab
+  // Separate filter states
   const [availableFilters, setAvailableFilters] = useState<ListingFilters>({
     locations: [],
     serviceTypes: [],
@@ -146,25 +104,6 @@ const Home = () => {
     return count;
   };
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'High': return '#FEE2E2';
-      case 'Medium': return '#FFEDD5';
-      case 'Low': return '#DCFCE7';
-      default: return '#F3F4F6';
-    }
-  };
-
-  const getUrgencyTextColor = (urgency: string) => {
-    switch (urgency) {
-      case 'High': return '#B91C1C';
-      case 'Medium': return '#C2410C';
-      case 'Low': return '#166534';
-      default: return '#374151';
-    }
-  };
-
-  // --- NEW: client-side filtering by search text
   const visibleListings = (listings ?? []).filter((l: any) => {
     if (!searchText.trim()) return true;
     const q = searchText.trim().toLowerCase();
@@ -176,17 +115,6 @@ const Home = () => {
     );
   });
 
-  // const HandleViewRequestClick = () => {
-  //   const router = useRouter()
-  //   console.log('View Request clicked');
-  //   try {
-  //     // incrementMonthClick(); // Ensure that the click count is updated in the database first
-  //     router.push('/(manage-request)/viewStats1'); // Then navigate to the next screen
-  //   } catch (e) {
-  //     console.error('Error recording click:', e); // Catch any errors during the increment or navigation
-  //   }
-  // };
-  
   return (
     <>
       <StatusBar />
@@ -194,7 +122,6 @@ const Home = () => {
         <HeaderSection>
           <MenuContainer />
           <Bar>
-            {/* --- NEW: real search input */}
             <SearchBarContainer>
               <Search />
               <SearchInput
@@ -231,6 +158,7 @@ const Home = () => {
               <LayoutList size={24} color={activeTab === 'available' ? '#000000' : '#9CA3AF'} />
               <TabText isActive={activeTab === 'available'}>Available</TabText>
             </TabButton>
+
             <TabButton
               isActive={activeTab === 'completed'}
               onPress={() => setActiveTab('completed')}
@@ -242,17 +170,6 @@ const Home = () => {
         </HeaderSection>
 
         <ScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
-          {/* {getActiveFilterCount() > 0 && (
-            <ActiveFiltersContainer>
-              <ActiveFiltersText>
-                {getActiveFilterCount()} filter{getActiveFilterCount() > 1 ? 's' : ''} applied
-              </ActiveFiltersText>
-              <ClearFiltersButton onPress={clearCurrentFilters}>
-                <ClearFiltersText>Clear all</ClearFiltersText>
-              </ClearFiltersButton>
-            </ActiveFiltersContainer>
-          )} */}
-
           {isLoading && (
             <LoadingContainer>
               <ActivityIndicator size="large" color="#2B61A6" />
@@ -260,86 +177,65 @@ const Home = () => {
             </LoadingContainer>
           )}
 
-          {error && (
-            <ErrorText>Error loading listings. Please try again.</ErrorText>
-          )}
+          {error && <ErrorText>Error loading listings. Please try again.</ErrorText>}
 
           {!isLoading && visibleListings && hasPermission(userRole, 'canViewAllListings') ? (
             visibleListings.map((listing: any) => (
-              <ListingCard
-                key={listing.id}
-                onPress={async () => {
-                  console.log('Listing card clicked'); // For debugging
-                  try {
-                    incrementMonthClick();
-                    router.navigate({
-                      pathname: '/(specific-listing)/sampleListing',
-                      params: {
-                        listingId: String(listing.id),
-                        category: listing.category,
-                        description: listing.description,
-                        address: listing.street_address,
-                        startTime: listing.start_time,
-                        duration: listing.duration,
-                        urgency: listing.urgency,
-                        status: listing.status
-                      }
-                    });
-                  } catch (e) {
-                    console.error('Error on listing click:', e);
-                  }
-                }}
-              >
-                <CardContent>
-                  <CardHeader>
-                    <CategoryBadge>
-                      <CategoryBadgeText>{listing.category}</CategoryBadgeText>
-                    </CategoryBadge>
+        <ListingCard
+          key={listing.id}
+          onPress={async () => {
+            try {
+              if (user?.id) {
+                await incrementMonthClick(user.id);   // per-user click tracking
+              }
+              router.navigate({
+                pathname: '/(specific-listing)/sampleListing',
+                params: {
+                  listingId: String(listing.id),
+                  category: listing.category,
+                  description: listing.description,
+                  address: listing.street_address,
+                  startTime: listing.start_time,
+                  duration: listing.duration,
+                  urgency: listing.urgency,
+                  status: listing.status
+                }
+              });
+            } catch (e) {
+              console.error('Error on listing click:', e);
+            }
+          }}
+        >
+          <CardContent>
 
-                    <CardActions>
-                      <ActionButton onPress={() => handleToggleSave(listing.id)}>
-                        <Heart
-                          size={20}
-                          color={savedIds.includes(listing.id) ? '#EF4444' : '#6B7280'}
-                          fill={savedIds.includes(listing.id) ? '#EF4444' : 'transparent'}
-                        />
-                      </ActionButton>
-                    </CardActions>
-                  </CardHeader>
+            <CardHeader>
+              <CategoryBadge>
+                <CategoryBadgeText>{listing.category}</CategoryBadgeText>
+              </CategoryBadge>
 
-                  <CardBody>
-                    <ListingTitle>{listing.category}</ListingTitle>
-                    <ListingSubtitle numberOfLines={3}>
-                      {listing.description}
-                    </ListingSubtitle>
-                  </CardBody>
+              <CardActions>
+                <ActionButton>
+                  <LayoutList size={16} color="#374151" />
+                </ActionButton>
+              </CardActions>
+            </CardHeader>
 
-                  <CardFooter>
-                    <LocationRow>
-                      <MapPin size={16} color="#6B7280" />
-                      <ListingLocation numberOfLines={1}>
-                        {listing.street_address}
-                      </ListingLocation>
-                    </LocationRow>
+            <CardBody>
+              <ListingTitle>{listing.description}</ListingTitle>
+              <ListingSubtitle>{listing.street_address}</ListingSubtitle>
+            </CardBody>
 
-                    <FooterRow>
-                      {listing.urgency && (
-                        <UrgencyBadge backgroundColor={getUrgencyColor(listing.urgency)}>
-                          <UrgencyText color={getUrgencyTextColor(listing.urgency)}>
-                            {listing.urgency} Priority
-                          </UrgencyText>
-                        </UrgencyBadge>
-                      )}
-                      {activeTab === 'completed' && (
-                        <StatusBadge>
-                          <CheckCircle size={14} color="#16A34A" />
-                          <StatusText>Completed</StatusText>
-                        </StatusBadge>
-                      )}
-                    </FooterRow>
-                  </CardFooter>
-                </CardContent>
-              </ListingCard>
+            <CardFooter>
+              <FooterRow>
+                <UrgencyBadge backgroundColor="#fee2e2">
+                  <UrgencyText color="#b91c1c">{listing.urgency}</UrgencyText>
+                </UrgencyBadge>
+              </FooterRow>
+            </CardFooter>
+
+          </CardContent>
+        </ListingCard>
+
             ))
           ) : (
             <EmptyListingsContainer>
@@ -383,6 +279,9 @@ const Home = () => {
 };
 
 export default Home;
+
+// Styles remain unchanged
+
 
 /* ---------------- Styles ---------------- */
 
